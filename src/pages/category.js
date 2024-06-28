@@ -1,0 +1,988 @@
+
+
+// import { useState, useEffect } from 'react';
+// import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Link, Switch, IconButton, Select, MenuItem } from '@mui/material';
+// import { styled } from '@mui/system';
+// import fs from 'fs';
+// import path from 'path';
+// import csv from 'csv-parser';
+// import { useRouter } from 'next/router';
+// import Brightness4Icon from '@mui/icons-material/Brightness4';
+// import Brightness7Icon from '@mui/icons-material/Brightness7';
+
+// const PAGE_SIZES = [10, 20, 30, 40, 50]; // Options for rows per page
+// const DEFAULT_PAGE_SIZE = 30; // Default number of items per page
+
+// const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: initialTotalPages }) => {
+//   const router = useRouter();
+//   const [darkMode, setDarkMode] = useState(false);
+//   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
+//   const [currentPage, setCurrentPage] = useState(initialPage);
+//   const [totalPages, setTotalPages] = useState(initialTotalPages);
+
+//   useEffect(() => {
+//     setTotalPages(Math.ceil(data.length / rowsPerPage));
+//   }, [rowsPerPage, data]);
+
+//   const navigateToPage = (page) => {
+//     router.push(`/category?page=${page}&rowsPerPage=${rowsPerPage}`);
+//     setCurrentPage(page);
+//   };
+
+//   const goToFlowPage = () => {
+//     router.push('/flow');
+//   };
+
+//   const toggleDarkMode = () => {
+//     setDarkMode(!darkMode);
+//   };
+
+//   const handleChangeRowsPerPage = (event) => {
+//     const newRowsPerPage = parseInt(event.target.value, 10);
+//     setRowsPerPage(newRowsPerPage);
+//     navigateToPage(1); // Navigate to first page immediately after changing rows per page
+//   };
+
+//   const handleFirstPage = () => {
+//     navigateToPage(1);
+//   };
+
+//   const handlePrevPage = () => {
+//     navigateToPage(Math.max(currentPage - 1, 1));
+//   };
+
+//   const handleNextPage = () => {
+//     navigateToPage(Math.min(currentPage + 1, totalPages));
+//   };
+
+//   const handleLastPage = () => {
+//     navigateToPage(totalPages);
+//   };
+
+//   const renderPageLinks = () => {
+//     return (
+//       <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px', backgroundColor: darkMode ? '#333' : 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
+//         {currentPage > 1 && (
+//           <>
+//             <Button variant="outlined" onClick={handleFirstPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px' }}>««</Button>
+//             <Button variant="outlined" onClick={handlePrevPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px' }}>«</Button>
+//           </>
+//         )}
+//         <Typography variant="body1" sx={{ marginX: '8px' }}>Page {currentPage} of {totalPages}</Typography>
+//         {currentPage < totalPages && (
+//           <>
+//             <Button variant="outlined" onClick={handleNextPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px' }}>»</Button>
+//             <Button variant="outlined" onClick={handleLastPage} sx={{ fontSize: '10px', maxWidth: '40px' }}>»»</Button>
+//           </>
+//         )}
+//       </Box>
+//     );
+//   };
+
+//   return (
+//     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: darkMode ? '#121212' : '#f4f6f8' }}>
+//       {/* App Bar */}
+//       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'black', padding: '16px' }}>
+//         <Typography variant="h5" sx={{ color: 'white', marginLeft: '16px' }}>Categories</Typography>
+//         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+//           <IconButton onClick={toggleDarkMode} sx={{ color: 'white', marginRight: '8px' }}>
+//             {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+//           </IconButton>
+//           <Button variant="outlined" onClick={goToFlowPage} sx={{ color: 'white', borderColor: 'white', fontSize: '12px', marginRight: '8px' }}>Home</Button>
+//         </Box>
+//       </Box>
+
+//       {/* Main Content Area */}
+//       <Box sx={{ flexGrow: 1, padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto' }}>
+//         <TableContainer component={Paper} sx={{ width: '100%', backgroundColor: darkMode ? '#333' : 'white' }}>
+//           <Table stickyHeader>
+//             <TableHead sx={{ backgroundColor: darkMode ? '#333' : 'white' }}>
+//               <TableRow>
+//                 {columns.map((column, index) => (
+//                   <TableCell key={index} sx={{ color: darkMode ? 'white' : 'black', backgroundColor: darkMode ? '#333' : 'white', fontSize: '16px', fontWeight: 'bold' }}>{column}</TableCell>
+//                 ))}
+//               </TableRow>
+//             </TableHead>
+//             <TableBody>
+//               {data.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((row, rowIndex) => (
+//                 <StyledTableRow key={rowIndex} darkMode={darkMode}>
+//                   {columns.map((column, colIndex) => (
+//                     <TableCell key={colIndex} sx={{ color: darkMode ? 'white' : 'black' }}>
+//                       {colIndex === 0 ? (
+//                         <Link href={`/category/${(currentPage - 1) * rowsPerPage + rowIndex}`} passHref>
+//                           <Button variant="text" sx={{ padding: 0, color: darkMode ? 'lightblue' : 'blue' }}>{row[column]}</Button>
+//                         </Link>
+//                       ) : (
+//                         row[column]
+//                       )}
+//                     </TableCell>
+//                   ))}
+//                 </StyledTableRow>
+//               ))}
+//             </TableBody>
+//           </Table>
+//         </TableContainer>
+//       </Box>
+
+//       {/* Rows per page selector */}
+//       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+//         <Typography variant="body1" sx={{ marginRight: '8px' }}>Rows per page:</Typography>
+//         <Select
+//           value={rowsPerPage}
+//           onChange={handleChangeRowsPerPage}
+//           sx={{ minWidth: '80px', marginRight: '16px' }}
+//         >
+//           {PAGE_SIZES.map((size) => (
+//             <MenuItem key={size} value={size}>{size}</MenuItem>
+//           ))}
+//         </Select>
+//         <Typography variant="body1" sx={{ marginRight: '8px' }}>Showing {Math.min(((currentPage - 1) * rowsPerPage) + 1, data.length)}-{Math.min(currentPage * rowsPerPage, data.length)} of {data.length}</Typography>
+//       </Box>
+
+//       {/* Pagination */}
+//       {renderPageLinks()}
+//     </Box>
+//   );
+// };
+
+// const StyledTableRow = styled(TableRow)(({ darkMode }) => ({
+//   '&:hover': {
+//     backgroundColor: darkMode ? '#444' : '#f5f5f5',
+//   },
+// }));
+
+// export async function getServerSideProps(context) {
+//   const { page = 1, rowsPerPage = DEFAULT_PAGE_SIZE } = context.query; // Default to page 1 and DEFAULT_PAGE_SIZE if no query params are provided
+//   const filePath = path.join(process.cwd(), 'src', 'data', 'data.csv');
+//   const data = [];
+//   let columns = [];
+//   let totalPages = 1;
+
+//   try {
+//     const fileStream = fs.createReadStream(filePath, 'utf8');
+//     let rowNum = 0;
+
+//     await new Promise((resolve, reject) => {
+//       fileStream.pipe(csv())
+//         .on('data', (row) => {
+//           if (rowNum === 0) {
+//             // Get column names from the first row
+//             columns = Object.keys(row).slice(0,10);
+//           }
+//           data.push(row); // Push the entire row
+//           rowNum++;
+//         })
+//         .on('end', () => {
+//           console.log('CSV file successfully processed');
+//           totalPages = Math.ceil(data.length / rowsPerPage);
+//           resolve();
+//         })
+//         .on('error', (err) => reject(err));
+//     });
+//   } catch (error) {
+//     console.error('Error reading or parsing CSV file:', error);
+//   }
+
+//   return {
+//     props: {
+//       data,
+//       columns,
+//       currentPage: +page,
+//       totalPages,
+//     },
+//   };
+// }
+
+// export default CategoryPage;
+
+// import { useState, useEffect } from 'react';
+// import Link from 'next/link';
+// import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Switch, IconButton, Select, MenuItem } from '@mui/material';
+// import { styled } from '@mui/system';
+// import fs from 'fs';
+// import path from 'path';
+// import csv from 'csv-parser';
+// import { useRouter } from 'next/router';
+// import Brightness4Icon from '@mui/icons-material/Brightness4';
+// import Brightness7Icon from '@mui/icons-material/Brightness7';
+// import Layout from '@/components/layout';
+// import { useDarkMode } from '@/contexts/darkModeContext';
+
+
+// const PAGE_SIZES = [10, 20, 30, 40, 50]; // Options for rows per page
+// const DEFAULT_PAGE_SIZE = 30; // Default number of items per page
+
+// const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: initialTotalPages }) => {
+//   const router = useRouter();
+//   // const [darkMode, setDarkMode] = useState(false);
+//   const {darkMode} = useDarkMode()
+//   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
+//   const [currentPage, setCurrentPage] = useState(initialPage);
+//   const [totalPages, setTotalPages] = useState(initialTotalPages);
+
+//   useEffect(() => {
+//     setTotalPages(Math.ceil(data.length / rowsPerPage));
+//   }, [rowsPerPage, data]);
+
+//   const navigateToPage = (page) => {
+//     router.push(`/category?page=${page}&rowsPerPage=${rowsPerPage}`);
+//     setCurrentPage(page);
+//   };
+
+//   const goToFlowPage = () => {
+//     router.push('/flow');
+//   };
+
+//   // const toggleDarkMode = () => {
+//   //   setDarkMode(!darkMode);
+//   // };
+
+//   const handleChangeRowsPerPage = (event) => {
+//     const newRowsPerPage = parseInt(event.target.value, 10);
+//     setRowsPerPage(newRowsPerPage);
+//     navigateToPage(1); // Navigate to first page immediately after changing rows per page
+//   };
+
+//   const handleFirstPage = () => {
+//     navigateToPage(1);
+//   };
+
+//   const handlePrevPage = () => {
+//     navigateToPage(Math.max(currentPage - 1, 1));
+//   };
+
+//   const handleNextPage = () => {
+//     navigateToPage(Math.min(currentPage + 1, totalPages));
+//   };
+
+//   const handleLastPage = () => {
+//     navigateToPage(totalPages);
+//   };
+
+//   const renderPageLinks = () => {
+//     return (
+//       <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px', backgroundColor: darkMode ? '#333' : 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
+//         {currentPage > 1 && (
+//           <>
+//             <Button variant="outlined" onClick={handleFirstPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>««</Button>
+//             <Button variant="outlined" onClick={handlePrevPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>«</Button>
+//           </>
+//         )}
+//         <Typography variant="body1" sx={{ marginX: '8px', color: darkMode ? 'white' : 'black' }}>Page {currentPage} of {totalPages}</Typography>
+//         {currentPage < totalPages && (
+//           <>
+//             <Button variant="outlined" onClick={handleNextPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>»</Button>
+//             <Button variant="outlined" onClick={handleLastPage} sx={{ fontSize: '10px', maxWidth: '40px', color: darkMode ? 'white' : 'black' }}>»»</Button>
+//           </>
+//         )}
+//       </Box>
+//     );
+//   };
+
+//   return (
+//     <Layout pageTitle="Data">
+//     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: darkMode ? '#121212' : '#f4f6f8' }}>
+//       {/* App Bar */}
+//       {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'black', padding: '16px' }}>
+//         <Typography variant="h5" sx={{ color: 'white', marginLeft: '16px' }}>Categories</Typography>
+//         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+//           <IconButton onClick={toggleDarkMode} sx={{ color: 'white', marginRight: '8px' }}>
+//             {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+//           </IconButton>
+//           <Button variant="outlined" onClick={goToFlowPage} sx={{ color: 'white', borderColor: 'white', fontSize: '12px', marginRight: '8px' }}>Home</Button>
+//         </Box>
+//       </Box> */}
+
+//       {/* Main Content Area */}
+//       <Box sx={{ flexGrow: 1, padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto' }}>
+//         <TableContainer component={Paper} sx={{ width: '100%', backgroundColor: darkMode ? '#333' : 'white' }}>
+//           <Table stickyHeader>
+//             <TableHead sx={{ backgroundColor: darkMode ? '#333' : 'white' }}>
+//               <TableRow>
+//                 {columns.map((column, index) => (
+//                   <TableCell key={index} sx={{ color: darkMode ? 'white' : 'black', backgroundColor: darkMode ? '#333' : 'white', fontSize: '16px', fontWeight: 'bold' }}>{column}</TableCell>
+//                 ))}
+//               </TableRow>
+//             </TableHead>
+//             <TableBody>
+//               {data.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((row, rowIndex) => (
+//                 <StyledTableRow key={rowIndex} darkMode={darkMode}>
+//                   {columns.map((column, colIndex) => (
+//                     <TableCell key={colIndex} sx={{ color: darkMode ? 'white' : 'black' }}>
+//                       {colIndex === 0 ? (
+//                         // <Link href={`/category/${(currentPage - 1) * rowsPerPage + rowIndex}`} passHref>
+//                         <Link href={`/category/${(currentPage - 1) * rowsPerPage + rowIndex + 1}`} passHref>
+//                           <Button variant="text" sx={{ padding: 0, color: darkMode ? 'lightblue' : 'blue' }}>{row[column]}</Button>
+//                         </Link>
+//                       ) : (
+//                         row[column]
+//                       )}
+//                     </TableCell>
+//                   ))}
+//                 </StyledTableRow>
+//               ))}
+//             </TableBody>
+//           </Table>
+//         </TableContainer>
+//       </Box>
+
+//       {/* Rows per page selector */}
+//       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+//         <Typography variant="body1" sx={{ marginRight: '8px', color: darkMode ? 'white' : 'black' }}>Rows per page:</Typography>
+//         <Select
+//           value={rowsPerPage}
+//           onChange={handleChangeRowsPerPage}
+//           sx={{ minWidth: '80px', marginRight: '16px', color: darkMode ? 'white' : 'black', '&:before': { borderColor: darkMode ? 'white' : 'black' }, '&:after': { borderColor: darkMode ? 'white' : 'black' }, '&:hover:not(.Mui-disabled):before': { borderColor: darkMode ? 'white' : 'black' }, '& .MuiSelect-icon': { color: darkMode ? 'white' : 'black' }, backgroundColor: darkMode ? '#555' : 'white', }}
+//         >
+//           {PAGE_SIZES.map((size) => (
+//             <MenuItem key={size} value={size}>{size}</MenuItem>
+//           ))}
+//         </Select>
+//         <Typography variant="body1" sx={{ marginRight: '8px', color: darkMode ? 'white' : 'black' }}>Showing {Math.min(((currentPage - 1) * rowsPerPage) + 1, data.length)}-{Math.min(currentPage * rowsPerPage, data.length)} of {data.length}</Typography>
+//       </Box>
+
+//       {/* Pagination */}
+//       {renderPageLinks()}
+//     </Box>
+//     </Layout>
+//   );
+// };
+
+// const StyledTableRow = styled(TableRow)(({ darkMode }) => ({
+//   '&:hover': {
+//     backgroundColor: darkMode ? '#444' : '#f5f5f5',
+//   },
+// }));
+
+// export async function getServerSideProps(context) {
+//   const { page = 1, rowsPerPage = DEFAULT_PAGE_SIZE } = context.query; // Default to page 1 and DEFAULT_PAGE_SIZE if no query params are provided
+//   const filePath = path.join(process.cwd(), 'src', 'data2', 'dataset.csv');
+//   const data = [];
+//   let columns = [];
+//   let totalPages = 1;
+
+//   try {
+//     const fileStream = fs.createReadStream(filePath, 'utf8');
+//     let rowNum = 0;
+
+//     await new Promise((resolve, reject) => {
+//       fileStream.pipe(csv())
+//         .on('data', (row) => {
+//           if (rowNum === 0) {
+//             // Get column names from the first row
+//             columns = Object.keys(row);
+//           }
+//           data.push(row); // Push the entire row
+//           rowNum++;
+//         })
+//         .on('end', () => {
+//           console.log('CSV file successfully processed');
+//           totalPages = Math.ceil
+//           (data.length / rowsPerPage);
+//           resolve();
+//         })
+//         .on('error', (err) => reject(err));
+//     });
+//   } catch (error) {
+//     console.error('Error reading or parsing CSV file:', error);
+//   }
+
+//   return {
+//     props: {
+//       data,
+//       columns,
+//       currentPage: +page,
+//       totalPages,
+//     },
+//   };
+// }
+
+// export default CategoryPage;
+
+// import { useState, useEffect } from 'react';
+// import Link from 'next/link';
+// import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Select, MenuItem } from '@mui/material';
+// import { styled } from '@mui/system';
+// import fs from 'fs';
+// import path from 'path';
+// import csv from 'csv-parser';
+// import { useRouter } from 'next/router';
+// import Layout from '@/components/layout';
+// import { useDarkMode } from '@/contexts/darkModeContext';
+// import Image from 'next/image'; // Import Image component from next/image
+
+// const PAGE_SIZES = [10, 20, 30, 40, 50]; // Options for rows per page
+// const DEFAULT_PAGE_SIZE = 30; // Default number of items per page
+
+// const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: initialTotalPages }) => {
+//   const router = useRouter();
+//   const { darkMode } = useDarkMode();
+//   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
+//   const [currentPage, setCurrentPage] = useState(initialPage);
+//   const [totalPages, setTotalPages] = useState(initialTotalPages);
+
+//   useEffect(() => {
+//     setTotalPages(Math.ceil(data.length / rowsPerPage));
+//   }, [rowsPerPage, data]);
+
+//   const navigateToPage = (page) => {
+//     router.push(`/category?page=${page}&rowsPerPage=${rowsPerPage}`);
+//     setCurrentPage(page);
+//   };
+
+//   const handleChangeRowsPerPage = (event) => {
+//     const newRowsPerPage = parseInt(event.target.value, 10);
+//     setRowsPerPage(newRowsPerPage);
+//     navigateToPage(1); // Navigate to first page immediately after changing rows per page
+//   };
+
+//   const handleFirstPage = () => {
+//     navigateToPage(1);
+//   };
+
+//   const handlePrevPage = () => {
+//     navigateToPage(Math.max(currentPage - 1, 1));
+//   };
+
+//   const handleNextPage = () => {
+//     navigateToPage(Math.min(currentPage + 1, totalPages));
+//   };
+
+//   const handleLastPage = () => {
+//     navigateToPage(totalPages);
+//   };
+
+//   const renderPageLinks = () => {
+//     return (
+//       <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px', backgroundColor: darkMode ? '#333' : 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
+//         {currentPage > 1 && (
+//           <>
+//             <Button variant="outlined" onClick={handleFirstPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>««</Button>
+//             <Button variant="outlined" onClick={handlePrevPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>«</Button>
+//           </>
+//         )}
+//         <Typography variant="body1" sx={{ marginX: '8px', color: darkMode ? 'white' : 'black' }}>Page {currentPage} of {totalPages}</Typography>
+//         {currentPage < totalPages && (
+//           <>
+//             <Button variant="outlined" onClick={handleNextPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>»</Button>
+//             <Button variant="outlined" onClick={handleLastPage} sx={{ fontSize: '10px', maxWidth: '40px', color: darkMode ? 'white' : 'black' }}>»»</Button>
+//           </>
+//         )}
+//       </Box>
+//     );
+//   };
+
+//   return (
+//     <Layout pageTitle="Data">
+//       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: darkMode ? '#121212' : '#f4f6f8' }}>
+//         {/* Main Content Area */}
+//         <Box sx={{ flexGrow: 1, padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto' }}>
+//           <TableContainer component={Paper} sx={{ width: '100%', backgroundColor: darkMode ? '#333' : 'white' }}>
+//             <Table stickyHeader>
+//               <TableHead sx={{ backgroundColor: darkMode ? '#333' : 'white' }}>
+//                 <TableRow>
+//                   {columns.map((column, index) => (
+//                     <TableCell key={index} sx={{ color: darkMode ? 'white' : 'black', backgroundColor: darkMode ? '#333' : 'white', fontSize: '16px', fontWeight: 'bold' }}>{column}</TableCell>
+//                   ))}
+//                 </TableRow>
+//               </TableHead>
+//               <TableBody>
+//                 {data.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((row, rowIndex) => (
+//                   <StyledTableRow key={rowIndex} darkMode={darkMode}>
+//                     {columns.map((column, colIndex) => (
+//                       <TableCell key={colIndex} sx={{ color: darkMode ? 'white' : 'black' }}>
+//                         {colIndex === 0 ? (
+//                           <Box style={{ display: 'flex', alignItems: 'center' }}>
+//                             <Link href={`/category/${(currentPage - 1) * rowsPerPage + rowIndex + 1}`} passHref>
+//                               <Button variant="text" sx={{ padding: 0, color: darkMode ? 'lightblue' : 'blue', marginLeft: '8px' }}>{row[column]}</Button>
+//                             </Link>
+//                             <Image
+//                               src={`/${row.ID}.jpg`} // Assuming images are named 1.jpg, 2.jpg, etc., in the public folder
+//                               alt="Image"
+//                               width={50}
+//                               height={50}
+//                             />
+//                           </Box>
+//                         ) : (
+//                           row[column]
+//                         )}
+//                       </TableCell>
+//                     ))}
+//                   </StyledTableRow>
+//                 ))}
+//               </TableBody>
+//             </Table>
+//           </TableContainer>
+//         </Box>
+
+//         {/* Rows per page selector */}
+//         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+//           <Typography variant="body1" sx={{ marginRight: '8px', color: darkMode ? 'white' : 'black' }}>Rows per page:</Typography>
+//           <Select
+//             value={rowsPerPage}
+//             onChange={handleChangeRowsPerPage}
+//             sx={{ minWidth: '80px', marginRight: '16px', color: darkMode ? 'white' : 'black', '&:before': { borderColor: darkMode ? 'white' : 'black' }, '&:after': { borderColor: darkMode ? 'white' : 'black' }, '&:hover:not(.Mui-disabled):before': { borderColor: darkMode ? 'white' : 'black' }, '& .MuiSelect-icon': { color: darkMode ? 'white' : 'black' }, backgroundColor: darkMode ? '#555' : 'white', }}
+//           >
+//             {PAGE_SIZES.map((size) => (
+//               <MenuItem key={size} value={size}>{size}</MenuItem>
+//             ))}
+//           </Select>
+//           <Typography variant="body1" sx={{ marginRight: '8px', color: darkMode ? 'white' : 'black' }}>Showing {Math.min(((currentPage - 1) * rowsPerPage) + 1, data.length)}-{Math.min(currentPage * rowsPerPage, data.length)} of {data.length}</Typography>
+//         </Box>
+
+//         {/* Pagination */}
+//         {renderPageLinks()}
+//       </Box>
+//     </Layout>
+//   );
+// };
+
+// const StyledTableRow = styled(TableRow)(({ darkMode }) => ({
+//   '&:hover': {
+//     backgroundColor: darkMode ? '#444' : '#f5f5f5',
+//   },
+// }));
+
+// // export async function getServerSideProps(context) {
+// //   const { page = 1, rowsPerPage = DEFAULT_PAGE_SIZE } = context.query; // Default to page 1 and DEFAULT_PAGE_SIZE if no query params are provided
+// //   const filePath = path.join(process.cwd(), 'src', 'data2', 'dataset.csv'); // Update the path to your CSV file
+// //   const data = [];
+// //   let columns = [];
+// //   let totalPages = 1;
+
+// //   try {
+// //     const fileStream = fs.createReadStream(filePath, 'utf8');
+// //     let rowNum = 0;
+
+// //     await new Promise((resolve, reject) => {
+// //       fileStream.pipe(csv())
+// //         .on('data', (row) => {
+// //           if (rowNum === 0) {
+// //             // Get column names from the first row
+// //             columns = Object.keys(row);
+// //           }
+// //           data.push(row); // Push the entire row
+// //           rowNum++;
+// //         })
+// //         .on('end', () => {
+// //           console.log('CSV file successfully processed');
+// //           totalPages = Math.ceil(data.length / rowsPerPage);
+// //           resolve();
+// //         })
+// //         .on('error', (err) => reject(err));
+// //     });
+// //   } catch (error) {
+// //     console.error('Error reading or parsing CSV file:', error);
+// //   }
+
+// //   return {
+// //     props: {
+// //       data,
+// //       columns,
+// //       currentPage: +page,
+// //       totalPages,
+// //     },
+// //   };
+// // }
+
+// // export default CategoryPage;
+// export async function getServerSideProps(context) {
+//   const { query } = context;
+//   const file = query.file || 'dataset.csv';
+//   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
+//   const currentPage = parseInt(query.page, 10) || 1;
+
+//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
+//   const filePath = path.join(dataDirectory, file);
+
+//   const data = [];
+//   const columns = new Set();
+
+//   await new Promise((resolve, reject) => {
+//     fs.createReadStream(filePath)
+//       .pipe(csv())
+//       .on('data', (row) => {
+//         data.push(row);
+//         Object.keys(row).forEach((column) => columns.add(column));
+//       })
+//       .on('end', resolve)
+//       .on('error', reject);
+//   });
+
+//   const totalPages = Math.ceil(data.length / rowsPerPage);
+//   return {
+//     props: {
+//       data,
+//       columns: Array.from(columns),
+//       currentPage,
+//       totalPages,
+//     },
+//   };
+// }
+
+// export default CategoryPage;
+
+// import { useState, useEffect } from 'react';
+// import Link from 'next/link';
+// import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Select, MenuItem } from '@mui/material';
+// import { styled } from '@mui/system';
+// import fs from 'fs';
+// import path from 'path';
+// import csv from 'csv-parser';
+// import { useRouter } from 'next/router';
+// import Layout from '@/components/layout';
+// import { useDarkMode } from '@/contexts/darkModeContext';
+// import Image from 'next/image'; // Import Image component from next/image
+
+// const PAGE_SIZES = [10, 20, 30, 40, 50]; // Options for rows per page
+// const DEFAULT_PAGE_SIZE = 30; // Default number of items per page
+
+// const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: initialTotalPages }) => {
+//   const router = useRouter();
+//   const { file } = router.query;
+//   const { darkMode } = useDarkMode();
+//   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
+//   const [currentPage, setCurrentPage] = useState(initialPage);
+//   const [totalPages, setTotalPages] = useState(initialTotalPages);
+
+//   useEffect(() => {
+//     setTotalPages(Math.ceil(data.length / rowsPerPage));
+//   }, [rowsPerPage, data]);
+
+//   const navigateToPage = (page) => {
+//     router.push(`/category?file=${file}&page=${page}&rowsPerPage=${rowsPerPage}`);
+//     setCurrentPage(page);
+//   };
+
+//   const handleChangeRowsPerPage = (event) => {
+//     const newRowsPerPage = parseInt(event.target.value, 10);
+//     setRowsPerPage(newRowsPerPage);
+//     navigateToPage(1); // Navigate to first page immediately after changing rows per page
+//   };
+
+//   const handleFirstPage = () => {
+//     navigateToPage(1);
+//   };
+
+//   const handlePrevPage = () => {
+//     navigateToPage(Math.max(currentPage - 1, 1));
+//   };
+
+//   const handleNextPage = () => {
+//     navigateToPage(Math.min(currentPage + 1, totalPages));
+//   };
+
+//   const handleLastPage = () => {
+//     navigateToPage(totalPages);
+//   };
+
+//   const renderPageLinks = () => {
+//     return (
+//       <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px', backgroundColor: darkMode ? '#333' : 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
+//         {currentPage > 1 && (
+//           <>
+//             <Button variant="outlined" onClick={handleFirstPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>««</Button>
+//             <Button variant="outlined" onClick={handlePrevPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>«</Button>
+//           </>
+//         )}
+//         <Typography variant="body1" sx={{ marginX: '8px', color: darkMode ? 'white' : 'black' }}>Page {currentPage} of {totalPages}</Typography>
+//         {currentPage < totalPages && (
+//           <>
+//             <Button variant="outlined" onClick={handleNextPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>»</Button>
+//             <Button variant="outlined" onClick={handleLastPage} sx={{ fontSize: '10px', maxWidth: '40px', color: darkMode ? 'white' : 'black' }}>»»</Button>
+//           </>
+//         )}
+//       </Box>
+//     );
+//   };
+
+//   return (
+//     <Layout pageTitle="Data">
+//       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: darkMode ? '#121212' : '#f4f6f8' }}>
+//         {/* Main Content Area */}
+//         <Box sx={{ flexGrow: 1, padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto' }}>
+//           <TableContainer component={Paper} sx={{ width: '100%', backgroundColor: darkMode ? '#333' : 'white' }}>
+//             <Table stickyHeader>
+//               <TableHead sx={{ backgroundColor: darkMode ? '#333' : 'white' }}>
+//                 <TableRow>
+//                   {columns.map((column, index) => (
+//                     <TableCell key={index} sx={{ color: darkMode ? 'white' : 'black', backgroundColor: darkMode ? '#333' : 'white', fontSize: '16px', fontWeight: 'bold' }}>{column}</TableCell>
+//                   ))}
+//                 </TableRow>
+//               </TableHead>
+//               <TableBody>
+//                 {data.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((row, rowIndex) => (
+//                   <StyledTableRow key={rowIndex} darkMode={darkMode}>
+//                     {columns.map((column, colIndex) => (
+//                       <TableCell key={colIndex} sx={{ color: darkMode ? 'white' : 'black' }}>
+//                         {colIndex === 0 ? (
+//                           <Box style={{ display: 'flex', alignItems: 'center' }}>
+//                             <Link href={`/category/${(currentPage - 1) * rowsPerPage + rowIndex + 1}?file=${file}`} passHref>
+//                               <Button variant="text" sx={{ padding: 0, color: darkMode ? 'lightblue' : 'blue', marginLeft: '8px' }}>{row[column]}</Button>
+//                             </Link>
+//                             <Image
+//                               src={`/${row.ID}.jpg`} // Assuming images are named 1.jpg, 2.jpg, etc., in the public folder
+//                               alt="Image"
+//                               width={50}
+//                               height={50}
+//                             />
+//                           </Box>
+//                         ) : (
+//                           row[column]
+//                         )}
+//                       </TableCell>
+//                     ))}
+//                   </StyledTableRow>
+//                 ))}
+//               </TableBody>
+//             </Table>
+//           </TableContainer>
+//         </Box>
+
+//         {/* Rows per page selector */}
+//         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+//           <Typography variant="body1" sx={{ marginRight: '8px', color: darkMode ? 'white' : 'black' }}>Rows per page:</Typography>
+//           <Select
+//             value={rowsPerPage}
+//             onChange={handleChangeRowsPerPage}
+//             sx={{ minWidth: '80px', marginRight: '16px', color: darkMode ? 'white' : 'black', '&:before': { borderColor: darkMode ? 'white' : 'black' }, '&:after': { borderColor: darkMode ? 'white' : 'black' }, '&:hover:not(.Mui-disabled):before': { borderColor: darkMode ? 'white' : 'black' }, '& .MuiSelect-icon': { color: darkMode ? 'white' : 'black' }, backgroundColor: darkMode ? '#555' : 'white', }}
+//           >
+//             {PAGE_SIZES.map((size) => (
+//               <MenuItem key={size} value={size}>{size}</MenuItem>
+//             ))}
+//           </Select>
+//           <Typography variant="body1" sx={{ marginRight: '8px', color: darkMode ? 'white' : 'black' }}>Showing {Math.min(((currentPage - 1) * rowsPerPage) + 1, data.length)}-{Math.min(currentPage * rowsPerPage, data.length)} of {data.length}</Typography>
+//         </Box>
+
+//         {/* Pagination */}
+//         {renderPageLinks()}
+//       </Box>
+//     </Layout>
+//   );
+// };
+
+// const StyledTableRow = styled(TableRow)(({ darkMode }) => ({
+//   '&:hover': {
+//     backgroundColor: darkMode ? '#444' : '#f5f5f5',
+//   },
+// }));
+
+// export async function getServerSideProps(context) {
+//   const { query } = context;
+//   const file = query.file || 'dataset.csv';
+//   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
+//   const currentPage = parseInt(query.page, 10) || 1;
+
+//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
+//   const filePath = path.join(dataDirectory, file);
+
+//   const data = [];
+//   const columns = new Set();
+
+//   await new Promise((resolve, reject) => {
+//     fs.createReadStream(filePath)
+//       .pipe(csv())
+//       .on('data', (row) => {
+//         data.push(row);
+//         Object.keys(row).forEach((column) => columns.add(column));
+//       })
+//       .on('end', resolve)
+//       .on('error', reject);
+//   });
+
+//   const totalPages = Math.ceil(data.length / rowsPerPage);
+//   return {
+//     props: {
+//       data,
+//       columns: Array.from(columns),
+//       currentPage,
+//       totalPages,
+//     },
+//   };
+// }
+
+// export default CategoryPage;
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Select, MenuItem } from '@mui/material';
+import { styled } from '@mui/system';
+import fs from 'fs';
+import path from 'path';
+import csv from 'csv-parser';
+import { useRouter } from 'next/router';
+import Layout from '@/components/layout';
+import { useDarkMode } from '@/contexts/darkModeContext';
+import Image from 'next/image'; // Import Image component from next/image
+
+const PAGE_SIZES = [10, 20, 30, 40, 50]; // Options for rows per page
+const DEFAULT_PAGE_SIZE = 30; // Default number of items per page
+
+const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: initialTotalPages }) => {
+  const router = useRouter();
+  const { file } = router.query;
+  const { darkMode } = useDarkMode();
+  const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
+
+  useEffect(() => {
+    setTotalPages(Math.ceil(data.length / rowsPerPage));
+  }, [rowsPerPage, data]);
+
+  const navigateToPage = (page) => {
+    router.push(`/category?file=${file}&page=${page}&rowsPerPage=${rowsPerPage}`);
+    setCurrentPage(page);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setRowsPerPage(newRowsPerPage);
+    navigateToPage(1); // Navigate to first page immediately after changing rows per page
+  };
+
+  const handleFirstPage = () => {
+    navigateToPage(1);
+  };
+
+  const handlePrevPage = () => {
+    navigateToPage(Math.max(currentPage - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    navigateToPage(Math.min(currentPage + 1, totalPages));
+  };
+
+  const handleLastPage = () => {
+    navigateToPage(totalPages);
+  };
+
+  const renderPageLinks = () => {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px', backgroundColor: darkMode ? '#333' : 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
+        {currentPage > 1 && (
+          <>
+            <Button variant="outlined" onClick={handleFirstPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>««</Button>
+            <Button variant="outlined" onClick={handlePrevPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>«</Button>
+          </>
+        )}
+        <Typography variant="body1" sx={{ marginX: '8px', color: darkMode ? 'white' : 'black' }}>Page {currentPage} of {totalPages}</Typography>
+        {currentPage < totalPages && (
+          <>
+            <Button variant="outlined" onClick={handleNextPage} sx={{ fontSize: '10px', maxWidth: '40px', marginRight: '8px', color: darkMode ? 'white' : 'black' }}>»</Button>
+            <Button variant="outlined" onClick={handleLastPage} sx={{ fontSize: '10px', maxWidth: '40px', color: darkMode ? 'white' : 'black' }}>»»</Button>
+          </>
+        )}
+      </Box>
+    );
+  };
+
+  return (
+    <Layout pageTitle="Data">
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: darkMode ? '#121212' : '#f4f6f8' }}>
+        {/* Main Content Area */}
+        <Box sx={{ flexGrow: 1, padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto' }}>
+          <TableContainer component={Paper} sx={{ width: '100%', backgroundColor: darkMode ? '#333' : 'white' }}>
+            <Table stickyHeader>
+              <TableHead sx={{ backgroundColor: darkMode ? '#333' : 'white' }}>
+                <TableRow>
+                  {columns.map((column, index) => (
+                    <TableCell key={index} sx={{ color: darkMode ? 'white' : 'black', backgroundColor: darkMode ? '#333' : 'white', fontSize: '16px', fontWeight: 'bold' }}>{column}</TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((row, rowIndex) => (
+                  <StyledTableRow key={rowIndex} darkMode={darkMode}>
+                    {columns.map((column, colIndex) => (
+                      <TableCell key={colIndex} sx={{ color: darkMode ? 'white' : 'black' }}>
+                        {colIndex === 0 ? (
+                          <Box style={{ display: 'flex', alignItems: 'center' }}>
+                            <Link href={`/category/${row.ID}?file=${file}`} passHref>
+                              <Button variant="text" sx={{ padding: 0, color: darkMode ? 'lightblue' : 'blue', marginLeft: '8px' }}>{row[column]}</Button>
+                            </Link>
+                            {/* Displaying image using next/image */}
+                            <Image
+                              src={`/${row.ID}.jpg`} // Assuming images are named 1.jpg, 2.jpg, etc., in the public folder
+                              alt="Image"
+                              width={50}
+                              height={50}
+                            />
+                          </Box>
+                        ) : (
+                          row[column]
+                        )}
+                      </TableCell>
+                    ))}
+                  </StyledTableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+
+        {/* Rows per page selector */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+          <Typography variant="body1" sx={{ marginRight: '8px', color: darkMode ? 'white' : 'black' }}>Rows per page:</Typography>
+          <Select
+            value={rowsPerPage}
+            onChange={handleChangeRowsPerPage}
+            sx={{ minWidth: '80px', marginRight: '16px', color: darkMode ? 'white' : 'black', '&:before': { borderColor: darkMode ? 'white' : 'black' }, '&:after': { borderColor: darkMode ? 'white' : 'black' }, '&:hover:not(.Mui-disabled):before': { borderColor: darkMode ? 'white' : 'black' }, '& .MuiSelect-icon': { color: darkMode ? 'white' : 'black' }, backgroundColor: darkMode ? '#555' : 'white', }}
+          >
+            {PAGE_SIZES.map((size) => (
+              <MenuItem key={size} value={size}>{size}</MenuItem>
+            ))}
+          </Select>
+          <Typography variant="body1" sx={{ marginRight: '8px', color: darkMode ? 'white' : 'black' }}>Showing {Math.min(((currentPage - 1) * rowsPerPage) + 1, data.length)}-{Math.min(currentPage * rowsPerPage, data.length)} of {data.length}</Typography>
+        </Box>
+
+        {/* Pagination */}
+        {renderPageLinks()}
+      </Box>
+    </Layout>
+  );
+};
+
+const StyledTableRow = styled(TableRow)(({ darkMode }) => ({
+  '&:hover': {
+    backgroundColor: darkMode ? '#444' : '#f5f5f5',
+  },
+}));
+
+export async function getServerSideProps(context) {
+  const { query } = context;
+  const file = query.file || 'dataset.csv';
+  const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
+  const currentPage = parseInt(query.page, 10) || 1;
+
+  const dataDirectory = path.join(process.cwd(), 'src', 'data2');
+  const filePath = path.join(dataDirectory, file);
+
+  const data = [];
+  const columns = new Set();
+
+  await new Promise((resolve, reject) => {
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on('data', (row) => {
+        // Extract ID from the first column and store it in the row object
+        row.ID = row['ID']; // Assuming the ID column name is 'ID'
+        data.push(row);
+        Object.keys(row).forEach((column) => columns.add(column));
+      })
+      .on('end', resolve)
+      .on('error', reject);
+  });
+
+  const totalPages = Math.ceil(data.length / rowsPerPage);
+  return {
+    props: {
+      data,
+      columns: Array.from(columns),
+      currentPage,
+      totalPages,
+    },
+  };
+}
+
+export default CategoryPage;
