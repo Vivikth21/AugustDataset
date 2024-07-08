@@ -276,13 +276,13 @@ const Flow = () => {
         sx={{
           padding: '24px',
           backgroundColor: darkMode ? '#333' : '#fff',
-          borderRadius: '8px',
-          marginTop: '16px',
-          marginLeft: '16px',
+          borderRadius: '0px',
+          marginTop: '0px',
+          marginLeft: '0px',
           flexGrow: 1
         }}
       >
-        <Section title="File" icon={FolderIcon} cards={[{title: "Food", file: "food.csv"}, {title: "Body Part", file: "bodypart.csv"}, {title: "Other", file: "other(p0).csv"}]} />
+        <Section title="File" icon={FolderIcon} cards={[{title:"A",file:"A.csv"},{title:"B",file:"B.csv"},{title: "C (Body Part)", file: "bodypart.csv"},{title: "D (Food) ", file: "food.csv"},{title: "E", file: "E.csv"},  {title: "Other", file: "other(p0).csv"}]}/>
         <Section title="Relevancy" icon={VerifiedIcon} cards={[{title: "Valid", file: "valid.csv"}, {title: "Invalid", file: "invalid.csv"}]} />
         <Section title="Type" icon={CategoryIcon} cards={[{title: "Blood/Urine", file: "bldurine.csv"}, {title: "Others", file: "other(p2).csv"}]} />
       </Container>
@@ -294,7 +294,7 @@ const Section = ({ title, icon: Icon, cards }) => {
   const { darkMode } = useDarkMode();
 
   return (
-    <Box sx={{ marginBottom: '40px' }}>
+    <Box sx={{ margin: '40px' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
         <Icon sx={{ marginRight: '8px', color: darkMode ? '#fff' : '#000' }} />
         <Typography variant="h6" sx={{ fontWeight: 'bold', color: darkMode ? '#fff' : '#000' }}>{title}</Typography>

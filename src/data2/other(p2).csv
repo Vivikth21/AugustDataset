@@ -1,2 +1,1 @@
-ID,Image,IMAGE CLASSIFIER (p1),VALID/INVALID,BLD OR URINE/OTHER
-3,https://drive.google.com/file/d/1GytpPH68KdIcVfs-9YnUn24GCgQyh2sK/view?usp=drive_link,OTHER,VALID,OTHER
+message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2

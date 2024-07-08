@@ -569,6 +569,993 @@
 
 // export default RowDetails;
 
+// import { useState, useEffect } from 'react';
+// import { AppBar, Toolbar, Typography, Box, Card, CardContent, TextField, Button, CssBaseline, IconButton, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+// import { createTheme, ThemeProvider } from '@mui/material/styles';
+// import { useRouter } from 'next/router';
+// import fs from 'fs';
+// import path from 'path';
+// import csv from 'csv-parser';
+// import Brightness4Icon from '@mui/icons-material/Brightness4';
+// import Brightness7Icon from '@mui/icons-material/Brightness7';
+// import { useDarkMode } from '@/contexts/darkModeContext';
+// import Layout from '@/components/layout';
+
+// const RowDetails = ({ row, totalPages }) => {
+//   const router = useRouter();
+//   const { rowId, file } = router.query;
+//   const { darkMode } = useDarkMode();
+//   const [editedData, setEditedData] = useState(row ? { ...row } : {});
+
+//   const getImageFileName = (rowId) => {
+//     switch (rowId) {
+//       case '1':
+//         return '1.jpg';
+//       case '2':
+//         return '2.jpg';
+//       case '3':
+//         return '3.jpg';
+//       case '4':
+//         return '4.jpg';
+//       case '5':
+//         return '5.jpg';
+//       default:
+//         return 'default.jpg'; // Provide a default image if rowId doesn't match
+//     }
+//   };
+
+//   const imageFileName = getImageFileName(rowId);
+
+//   const handleChange = (field, value) => {
+//     setEditedData((prevData) => ({
+//       ...prevData,
+//       [field]: value,
+//     }));
+//   };
+
+//   const handleSave = async () => {
+//     const updateData = {
+//       ...row,
+//       ...editedData,
+//     };
+
+//     try {
+//       const response = await fetch('/api/updateRow', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           rowId,
+//           newData: updateData,
+//         }),
+//       });
+
+//       if (response.ok) {
+//         console.log('Row updated successfully');
+//         alert('Change made successfully!');
+//         router.back();
+//       } else {
+//         console.error('Failed to update row');
+//       }
+//     } catch (error) {
+//       console.error('Error updating row:', error);
+//     }
+//   };
+
+//   const theme = createTheme({
+//     palette: {
+//       mode: darkMode ? 'dark' : 'light',
+//     },
+//   });
+
+//   if (!row) {
+//     return (
+//       <ThemeProvider theme={theme}>
+//         <Layout pageTitle="Item Not Found">
+//           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+//             <Typography variant="h4" sx={{ color: darkMode ? '#fff' : '#000' }}>
+//               Row not found
+//             </Typography>
+//           </Box>
+//         </Layout>
+//       </ThemeProvider>
+//     );
+//   }
+
+//   const renderFormFields = () => {
+//     const category = editedData['IMAGE CLASSIFIER (p1)'];
+//     const validity = editedData['VALID/INVALID'];
+//     const type = editedData['BLD OR URINE/OTHER'];
+
+//     return (
+//       <>
+//         <FormControl fullWidth margin="normal">
+//           <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Category</InputLabel>
+//           <Select
+//             value={category}
+//             onChange={(e) => handleChange('IMAGE CLASSIFIER (p1)', e.target.value)}
+//             sx={{ height: '150px' }} // Adjust height as needed
+//           >
+//             <MenuItem value="FOOD">Food</MenuItem>
+//             <MenuItem value="BODY PART">Body Part</MenuItem>
+//             <MenuItem value="OTHER">Other</MenuItem>
+//           </Select>
+//         </FormControl>
+
+//         {category === 'OTHER' && (
+//           <FormControl fullWidth margin="normal">
+//             <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Validity</InputLabel>
+//             <Select
+//               value={validity}
+//               onChange={(e) => handleChange('VALID/INVALID', e.target.value)}
+//               sx={{ height: '150px' }} // Adjust height as needed
+//             >
+//               <MenuItem value="VALID">Valid</MenuItem>
+//               <MenuItem value="INVALID">Invalid</MenuItem>
+//             </Select>
+//           </FormControl>
+//         )}
+
+//         {category === 'OTHER' && validity === 'VALID' && (
+//           <FormControl fullWidth margin="normal">
+//             <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Type</InputLabel>
+//             <Select
+//               value={type}
+//               onChange={(e) => handleChange('BLD OR URINE/OTHER', e.target.value)}
+//               sx={{ height: '150px' }} // Adjust height as needed
+//             >
+//               <MenuItem value="BLD OR URINE">Blood/Urine</MenuItem>
+//               <MenuItem value="OTHER">Other</MenuItem>
+//             </Select>
+//           </FormControl>
+//         )}
+//       </>
+//     );
+//   };
+
+//   return (
+//     <ThemeProvider theme={theme}>
+//       <Layout pageTitle="Item">
+//         <CssBaseline />
+//         <Box sx={{ display: 'flex', minHeight: '100vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+//           <Card sx={{ flex: '1 1 45%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+//             <CardContent>
+//               <Typography variant="body1" sx={{ marginBottom: '8px', color: darkMode ? '#fff' : '#000' }}>
+//                 <strong>ID:</strong> {row['ID']}
+//               </Typography>
+//               <img src={`/${imageFileName}`} alt="/Food.jpg" style={{ maxWidth: '100%' }} />
+//             </CardContent>
+//           </Card>
+
+//           <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '80vh' }}>
+//             {renderFormFields()}
+//             <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', marginTop: '16px' }}>
+//               Save
+//             </Button>
+//           </Box>
+//         </Box>
+//       </Layout>
+//     </ThemeProvider>
+//   );
+// };
+
+// export async function getServerSideProps(context) {
+//   const { rowId, file } = context.query;
+//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
+//   const csvFiles = [
+//     'dataset.csv',
+//     'food.csv',
+//     'body.csv',
+//     'other(p0).csv',
+//     'valid.csv',
+//     'invalid.csv',
+//     'bld&urine.csv',
+//     'other(p2).csv',
+//   ];
+
+//   let rowData = null;
+//   let totalPages = 0;
+
+//   // Determine the CSV file to read from based on the query parameter
+//   const filePath = path.join(dataDirectory, file || 'dataset.csv');
+
+//   // Search across the CSV file
+//   try {
+//     const fileStream = fs.createReadStream(filePath, 'utf8');
+//     let rowNum = 0;
+
+//     await new Promise((resolve, reject) => {
+//       fileStream.pipe(csv())
+//         .on('data', (row) => {
+//           if (row['ID'] === rowId) {
+//             rowData = row;
+//           }
+//           rowNum++;
+//         })
+//         .on('end', () => {
+//           totalPages = rowNum; // Assuming each row is a unique page for simplicity
+//           resolve();
+//         })
+//         .on('error', (err) => reject(err));
+//     });
+//   } catch (error) {
+//     console.error('Error reading or parsing CSV file:', error);
+//   }
+
+//   return {
+//     props: {
+//       row: rowData,
+//       totalPages,
+//     },
+//   };
+// }
+
+// export default RowDetails;
+
+// import { useState, useEffect } from 'react';
+// import { AppBar, Toolbar, Typography, Box, Card, CardContent, TextField, Button, CssBaseline, IconButton, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+// import { createTheme, ThemeProvider } from '@mui/material/styles';
+// import { useRouter } from 'next/router';
+// import fs from 'fs';
+// import path from 'path';
+// import csv from 'csv-parser';
+// import Brightness4Icon from '@mui/icons-material/Brightness4';
+// import Brightness7Icon from '@mui/icons-material/Brightness7';
+// import { useDarkMode } from '@/contexts/darkModeContext';
+// import Layout from '@/components/layout';
+
+// const RowDetails = ({ row, totalPages }) => {
+//   const router = useRouter();
+//   const { rowId, file } = router.query;
+//   const { darkMode } = useDarkMode();
+//   const [editedData, setEditedData] = useState(row ? { ...row } : {});
+//   const [oldData, setOldData] = useState(row ? { ...row } : {});
+
+//   const getImageFileName = (rowId) => {
+//     switch (rowId) {
+//       case '1':
+//         return '1.jpg';
+//       case '2':
+//         return '2.jpg';
+//       case '3':
+//         return '3.jpg';
+//       case '4':
+//         return '4.jpg';
+//       case '5':
+//         return '5.jpg';
+//       default:
+//         return 'default.jpg'; // Provide a default image if rowId doesn't match
+//     }
+//   };
+
+//   const imageFileName = getImageFileName(rowId);
+
+//   const handleChange = (field, value) => {
+//     setEditedData((prevData) => ({
+//       ...prevData,
+//       [field]: value,
+//     }));
+//   };
+
+//   const handleSave = async () => {
+//     const updateData = {
+//       ...row,
+//       ...editedData,
+//     };
+
+//     try {
+//       const response = await fetch('/api/updateRow', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           rowId,
+//           newData: updateData,
+//           oldData: oldData, // Pass the old data for deletion
+//         }),
+//       });
+
+//       if (response.ok) {
+//         console.log('Row updated successfully');
+//         alert('Change made successfully!');
+//         router.back();
+//       } else {
+//         console.error('Failed to update row');
+//       }
+//     } catch (error) {
+//       console.error('Error updating row:', error);
+//     }
+//   };
+
+//   const theme = createTheme({
+//     palette: {
+//       mode: darkMode ? 'dark' : 'light',
+//     },
+//   });
+
+//   if (!row) {
+//     return (
+//       <ThemeProvider theme={theme}>
+//         <Layout pageTitle="Item Not Found">
+//           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+//             <Typography variant="h4" sx={{ color: darkMode ? '#fff' : '#000' }}>
+//               Row not found
+//             </Typography>
+//           </Box>
+//         </Layout>
+//       </ThemeProvider>
+//     );
+//   }
+
+//   const renderFormFields = () => {
+//     const category = editedData['IMAGE CLASSIFIER (p1)'];
+//     const validity = editedData['VALID/INVALID'];
+//     const type = editedData['BLD OR URINE/OTHER'];
+
+//     return (
+//       <>
+//         <FormControl fullWidth margin="normal">
+//           <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Category</InputLabel>
+//           <Select
+//             value={category}
+//             onChange={(e) => handleChange('IMAGE CLASSIFIER (p1)', e.target.value)}
+//             sx={{ height: '150px' }} // Adjust height as needed
+//           >
+//             <MenuItem value="FOOD">Food</MenuItem>
+//             <MenuItem value="BODY PART">Body Part</MenuItem>
+//             <MenuItem value="OTHER">Other</MenuItem>
+//           </Select>
+//         </FormControl>
+
+//         {category === 'OTHER' && (
+//           <FormControl fullWidth margin="normal">
+//             <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Validity</InputLabel>
+//             <Select
+//               value={validity}
+//               onChange={(e) => handleChange('VALID/INVALID', e.target.value)}
+//               sx={{ height: '150px' }} // Adjust height as needed
+//             >
+//               <MenuItem value="VALID">Valid</MenuItem>
+//               <MenuItem value="INVALID">Invalid</MenuItem>
+//             </Select>
+//           </FormControl>
+//         )}
+
+//         {category === 'OTHER' && validity === 'VALID' && (
+//           <FormControl fullWidth margin="normal">
+//             <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Type</InputLabel>
+//             <Select
+//               value={type}
+//               onChange={(e) => handleChange('BLD OR URINE/OTHER', e.target.value)}
+//               sx={{ height: '150px' }} // Adjust height as needed
+//             >
+//               <MenuItem value="BLD OR URINE">Blood/Urine</MenuItem>
+//               <MenuItem value="OTHER">Other</MenuItem>
+//             </Select>
+//           </FormControl>
+//         )}
+//       </>
+//     );
+//   };
+
+//   return (
+//     <ThemeProvider theme={theme}>
+//       <Layout pageTitle="Item">
+//         <CssBaseline />
+//         <Box sx={{ display: 'flex', minHeight: '100vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+//           <Card sx={{ flex: '1 1 45%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+//             <CardContent>
+//               <Typography variant="body1" sx={{ marginBottom: '8px', color: darkMode ? '#fff' : '#000' }}>
+//                 <strong>ID:</strong> {row['ID']}
+//               </Typography>
+//               <img src={`/${imageFileName}`} alt="/Food.jpg" style={{ maxWidth: '100%' }} />
+//             </CardContent>
+//           </Card>
+
+//           <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '80vh' }}>
+//             {renderFormFields()}
+//             <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', marginTop: '16px' }}>
+//               Save
+//             </Button>
+//           </Box>
+//         </Box>
+//       </Layout>
+//     </ThemeProvider>
+//   );
+// };
+
+// export async function getServerSideProps(context) {
+//   const { rowId, file } = context.query;
+//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
+//   const csvFiles = [
+//     'dataset.csv',
+//     'food.csv',
+//     'body.csv',
+//     'other(p0).csv',
+//     'valid.csv',
+//     'invalid.csv',
+//     'bld&urine.csv',
+//     'other(p2).csv',
+//   ];
+
+//   let rowData = null;
+//   let totalPages = 0;
+
+//   // Determine the CSV file to read from based on the query parameter
+//   const filePath = path.join(dataDirectory, file || 'dataset.csv');
+
+//   // Search across the CSV file
+//   try {
+//     const fileStream = fs.createReadStream(filePath, 'utf8');
+//     let rowNum = 0;
+
+//     await new Promise((resolve, reject) => {
+//       fileStream.pipe(csv())
+//         .on('data', (row) => {
+//           if (row['ID'] === rowId) {
+//             rowData = row;
+//           }
+//           rowNum++;
+//         })
+//         .on('end', () => {
+//           totalPages = rowNum; // Assuming each row is a unique page for simplicity
+//           resolve();
+//         })
+//         .on('error', (err) => reject(err));
+//     });
+//   } catch (error) {
+//     console.error('Error reading or parsing CSV file:', error);
+//   }
+
+//   return {
+//     props: {
+//       row: rowData,
+//       totalPages,
+//     },
+//   };
+// }
+
+// export default RowDetails;
+
+// import { useState, useEffect } from 'react';
+// import { AppBar, Toolbar, Typography, Box, Card, CardContent, TextField, Button, CssBaseline, IconButton, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+// import { createTheme, ThemeProvider } from '@mui/material/styles';
+// import { useRouter } from 'next/router';
+// import fs from 'fs';
+// import path from 'path';
+// import csv from 'csv-parser';
+// import Brightness4Icon from '@mui/icons-material/Brightness4';
+// import Brightness7Icon from '@mui/icons-material/Brightness7';
+// import { useDarkMode } from '@/contexts/darkModeContext';
+// import Layout from '@/components/layout';
+
+// const RowDetails = ({ row, totalPages }) => {
+//   const router = useRouter();
+//   const { rowId, file } = router.query;
+//   const { darkMode } = useDarkMode();
+//   const [editedData, setEditedData] = useState(row ? { ...row } : {});
+//   const [oldData, setOldData] = useState(row ? { ...row } : {});
+
+//   useEffect(() => {
+//     if (row) {
+//       setEditedData((prevData) => ({
+//         ...prevData,
+//         Visited: true, // Set Visited to true
+//       }));
+//     }
+//   }, [row]);
+
+//   const getImageFileName = (rowId) => {
+//     switch (rowId) {
+//       case '1':
+//         return '1.jpg';
+//       case '2':
+//         return '2.jpg';
+//       case '3':
+//         return '3.jpg';
+//       case '4':
+//         return '4.jpg';
+//       case '5':
+//         return '5.jpg';
+//       default:
+//         return 'default.jpg'; // Provide a default image if rowId doesn't match
+//     }
+//   };
+
+//   const imageFileName = getImageFileName(rowId);
+
+//   const handleChange = (field, value) => {
+//     setEditedData((prevData) => ({
+//       ...prevData,
+//       [field]: value,
+//     }));
+//   };
+
+//   const handleSave = async () => {
+//     const updateData = {
+//       ...row,
+//       ...editedData,
+//     };
+
+//     try {
+//       const response = await fetch('/api/updateRow', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           rowId,
+//           newData: updateData,
+//           oldData: oldData, // Pass the old data for deletion
+//         }),
+//       });
+
+//       if (response.ok) {
+//         console.log('Row updated successfully');
+//         alert('Change made successfully!');
+//         router.back();
+//       } else {
+//         console.error('Failed to update row');
+//       }
+//     } catch (error) {
+//       console.error('Error updating row:', error);
+//     }
+//   };
+
+//   const theme = createTheme({
+//     palette: {
+//       mode: darkMode ? 'dark' : 'light',
+//     },
+//   });
+
+//   if (!row) {
+//     return (
+//       <ThemeProvider theme={theme}>
+//         <Layout pageTitle="Item Not Found">
+//           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+//             <Typography variant="h4" sx={{ color: darkMode ? '#fff' : '#000' }}>
+//               Row not found
+//             </Typography>
+//           </Box>
+//         </Layout>
+//       </ThemeProvider>
+//     );
+//   }
+
+//   const renderFormFields = () => {
+//     const category = editedData['IMAGE CLASSIFIER (p1)'];
+//     const validity = editedData['VALID/INVALID'];
+//     const type = editedData['BLD OR URINE/OTHER'];
+
+//     return (
+//       <>
+//         <FormControl fullWidth margin="normal">
+//           <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Category</InputLabel>
+//           <Select
+//             value={category}
+//             onChange={(e) => handleChange('IMAGE CLASSIFIER (p1)', e.target.value)}
+//             sx={{ height: '150px' }} // Adjust height as needed
+//           >
+//             <MenuItem value="FOOD">Food</MenuItem>
+//             <MenuItem value="BODY PART">Body Part</MenuItem>
+//             <MenuItem value="OTHER">Other</MenuItem>
+//           </Select>
+//         </FormControl>
+
+//         {category === 'OTHER' && (
+//           <FormControl fullWidth margin="normal">
+//             <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Validity</InputLabel>
+//             <Select
+//               value={validity}
+//               onChange={(e) => handleChange('VALID/INVALID', e.target.value)}
+//               sx={{ height: '150px' }} // Adjust height as needed
+//             >
+//               <MenuItem value="VALID">Valid</MenuItem>
+//               <MenuItem value="INVALID">Invalid</MenuItem>
+//             </Select>
+//           </FormControl>
+//         )}
+
+//         {category === 'OTHER' && validity === 'VALID' && (
+//           <FormControl fullWidth margin="normal">
+//             <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Type</InputLabel>
+//             <Select
+//               value={type}
+//               onChange={(e) => handleChange('BLD OR URINE/OTHER', e.target.value)}
+//               sx={{ height: '150px' }} // Adjust height as needed
+//             >
+//               <MenuItem value="BLD OR URINE">Blood/Urine</MenuItem>
+//               <MenuItem value="OTHER">Other</MenuItem>
+//             </Select>
+//           </FormControl>
+//         )}
+//       </>
+//     );
+//   };
+
+//   return (
+//     <ThemeProvider theme={theme}>
+//       <Layout pageTitle="Item">
+//         <CssBaseline />
+//         <Box sx={{ display: 'flex', minHeight: '100vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+//           <Card sx={{ flex: '1 1 45%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+//             <CardContent>
+//               <Typography variant="body1" sx={{ marginBottom: '8px', color: darkMode ? '#fff' : '#000' }}>
+//                 <strong>ID:</strong> {row['ID']}
+//               </Typography>
+//               <img src={`/${imageFileName}`} alt="/Food.jpg" style={{ maxWidth: '100%' }} />
+//             </CardContent>
+//           </Card>
+
+//           <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '80vh' }}>
+//             {renderFormFields()}
+//             <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', marginTop: '16px' }}>
+//               Save
+//             </Button>
+//           </Box>
+//         </Box>
+//       </Layout>
+//     </ThemeProvider>
+//   );
+// };
+
+// export async function getServerSideProps(context) {
+//   const { rowId, file } = context.query;
+//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
+//   const csvFiles = [
+//     'dataset.csv',
+//     'food.csv',
+//     'body.csv',
+//     'other(p0).csv',
+//     'valid.csv',
+//     'invalid.csv',
+//     'bld&urine.csv',
+//     'other(p2).csv',
+//   ];
+
+//   let rowData = null;
+//   let totalPages = 0;
+
+//   // Determine the CSV file to read from based on the query parameter
+//   const filePath = path.join(dataDirectory, file || 'dataset.csv');
+
+//   // Search across the CSV file
+//   try {
+//     const fileStream = fs.createReadStream(filePath, 'utf8');
+//     let rowNum = 0;
+
+//     await new Promise((resolve, reject) => {
+//       fileStream.pipe(csv())
+//         .on('data', (row) => {
+//           if (row['ID'] === rowId) {
+//             rowData = row;
+//           }
+//           rowNum++;
+//         })
+//         .on('end', () => {
+//           totalPages = rowNum; // Assuming each row is a unique page for simplicity
+//           resolve();
+//         })
+//         .on('error', (err) => reject(err));
+//     });
+//   } catch (error) {
+//     console.error('Error reading or parsing CSV file:', error);
+//   }
+
+//   // Ensure the Visited field exists and is set to false if not already present
+//   if (rowData && !('Visited' in rowData)) {
+//     rowData['Visited'] = false;
+//   }
+
+//   return {
+//     props: {
+//       row: rowData,
+//       totalPages,
+//     },
+//   };
+// }
+
+// export default RowDetails;
+
+// import { useState, useEffect } from 'react';
+// import { AppBar, Toolbar, Typography, Box, Card, CardContent, TextField, Button, CssBaseline, IconButton, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+// import { createTheme, ThemeProvider } from '@mui/material/styles';
+// import { useRouter } from 'next/router';
+// import fs from 'fs';
+// import path from 'path';
+// import csv from 'csv-parser';
+// import Brightness4Icon from '@mui/icons-material/Brightness4';
+// import Brightness7Icon from '@mui/icons-material/Brightness7';
+// import { useDarkMode } from '@/contexts/darkModeContext';
+// import Layout from '@/components/layout';
+// import { EditProvider,useEditContext } from '@/contexts/editContext';
+
+// const RowDetails = ({ row, totalPages }) => {
+//   const router = useRouter();
+//   const { rowId, file } = router.query;
+//   const { darkMode } = useDarkMode();
+//   const { editedRows,addEditedRow } = useEditContext();
+//   const [editedData, setEditedData] = useState(row ? { ...row } : {});
+//   const [oldData, setOldData] = useState(row ? { ...row } : {});
+//   console.log("Old data: ",oldData);
+//   console.log("Edited Data",editedData);
+
+//   useEffect(() => {
+//     if (row) {
+//       setEditedData((prevData) => ({
+//         ...prevData,
+//         // Visited: true, // Set Visited to true
+//       }));
+//     }
+//   }, [row]);
+
+//   const getImageFileName = (rowId) => {
+//     switch (rowId) {
+//       case '1':
+//         return '1.jpg';
+//       case '2':
+//         return '2.jpg';
+//       case '3':
+//         return '3.jpg';
+//       case '4':
+//         return '4.jpg';
+//       case '5':
+//         return '5.jpg';
+//       default:
+//         return '1.jpg'; // Provide a default image if rowId doesn't match
+//     }
+//   };
+
+//   const imageFileName = getImageFileName(rowId);
+
+//   // const handleChange = (field, value) => {
+//   //   setEditedData((prevData) => ({
+//   //     ...prevData,
+//   //     [field]: value,
+//   //   }));
+//   // };
+//   const handleChange = (field, value) => {
+//     setEditedData((prevData) => ({
+//       ...prevData,
+//       [field]: value,
+//       // Visited: true
+//     }));
+//     addEditedRow(rowId);
+//     // const editedRows = JSON.parse(localStorage.getItem('editedRows')) || [];
+//     // if (!editedRows.includes(rowId)) {
+//     //   localStorage.setItem('editedRows', JSON.stringify([...editedRows, rowId]));
+//     // }
+//     // console.log("Rows pushed",editedRows);
+//   };
+  
+  
+
+//   const handleSave = async () => {
+//     const updateData = {
+//       ...row,
+//       ...editedData,
+//     };
+
+//     try {
+//       const response = await fetch('/api/updateRow', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           rowId: rowId,
+//           newData: updateData,
+//           oldData: oldData,
+//           currentFile: file // Pass the old data for deletion
+//         }),
+//       });
+
+//       if (response.ok) {
+//         console.log('Row updated successfully');
+//         console.log("Rows pushed",editedRows);
+//         alert('Change made successfully!');
+//         router.back();
+//       } else {
+//         console.error('Failed to update row');
+//       }
+//     } catch (error) {
+//       console.error('Error updating row:', error);
+//     }
+//   };
+
+//   const theme = createTheme({
+//     palette: {
+//       mode: darkMode ? 'dark' : 'light',
+//     },
+//   });
+
+//   if (!row) {
+//     return (
+//       <ThemeProvider theme={theme}>
+//         <Layout pageTitle="Item Not Found">
+//           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+//             <Typography variant="h4" sx={{ color: darkMode ? '#fff' : '#000' }}>
+//               Row not found
+//             </Typography>
+//           </Box>
+//         </Layout>
+//       </ThemeProvider>
+//     );
+//   }
+
+//   const renderFormFields = () => {
+//     const category = editedData['task0'];
+//     console.log("Category",category);
+//     const validity = editedData['task1'];
+//     const type = editedData['task2'];
+//     const output = editedData['output']
+
+//     return (
+//       <>
+//         {/* <TextField
+//           fullWidth
+//           margin="normal"
+//           label="Output"
+//           value={editedData.output || ''}
+//           onChange={(e) => handleChange('output', e.target.value)}
+//           sx={{ fontSize: '12px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000' ,height:'200px',marginBottom:'20px'}}
+//           InputProps={{
+//             sx: {
+//               fontSize: '14px', // Adjust the font size as needed to decrease text size
+//             },
+//           }}
+        
+//         /> */}
+//         <TextField
+//   label="Output"
+//   multiline
+//   rows={15} // Adjust the number of rows as needed to increase height
+//   value={editedData.output}
+//   onChange={(e) => handleChange('output', e.target.value)}
+//   fullWidth
+//   variant="outlined"
+//   InputProps={{
+//     sx: {
+//       fontSize: '12px', // Adjust the font size as needed to decrease text size
+//     },
+//   }}
+//   sx={{ marginBottom: '16px' }} // Adjust margin bottom as needed
+// />
+//         <FormControl fullWidth margin="normal">
+//           <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Category</InputLabel>
+//           <Select
+//             value={category}
+//             onChange={(e) => handleChange('task0', e.target.value)}
+//             sx={{ height: '100px' }} // Adjust height as needed
+//           >
+//             <MenuItem value="Food">Food</MenuItem>
+//             <MenuItem value="Body Part">Body Part</MenuItem>
+//             <MenuItem value="Other">Other</MenuItem>
+//           </Select>
+//         </FormControl>
+
+//         {category === 'Other' && (
+//           <FormControl fullWidth margin="normal">
+//             <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Validity</InputLabel>
+//             <Select
+//               value={validity}
+//               onChange={(e) => handleChange('task1', e.target.value)}
+//               sx={{ height: '100px' }} // Adjust height as needed
+//             >
+//               <MenuItem value="Valid">Valid</MenuItem>
+//               <MenuItem value="Invalid">Invalid</MenuItem>
+//             </Select>
+//           </FormControl>
+//         )}
+
+//         {category === 'Other' && validity === 'Valid' && (
+//           <FormControl fullWidth margin="normal">
+//             <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Type</InputLabel>
+//             <Select
+//               value={type}
+//               onChange={(e) => handleChange('task2', e.target.value)}
+//               sx={{ height: '100px' }} // Adjust height as needed
+//             >
+//               <MenuItem value="Blood & Urine">Blood/Urine</MenuItem>
+//               <MenuItem value="Other">Other</MenuItem>
+//             </Select>
+//           </FormControl>
+//         )}
+//       </>
+
+//     );
+//   };
+
+//   return (
+//     <ThemeProvider theme={theme}>
+//       <Layout pageTitle="Item">
+//         <CssBaseline />
+//         <Box sx={{ display: 'flex', minHeight: '100vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+//           <Card sx={{ flex: '1 1 45%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+//             <CardContent>
+//               <Typography variant="body1" sx={{ marginBottom: '8px', color: darkMode ? '#fff' : '#000' }}>
+//                 <strong>ID:</strong> {row['message_id_new']}
+//               </Typography>
+//               <img src={`/${imageFileName}`} alt="Image" style={{ maxWidth: '100%' }} />
+//             </CardContent>
+//           </Card>
+
+//           <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '80vh' }}>
+//             {renderFormFields()}
+//             <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', marginTop: '16px' }}>
+//               Save
+//             </Button>
+//           </Box>
+//         </Box>
+//       </Layout>
+//     </ThemeProvider>
+//   );
+// };
+
+// export async function getServerSideProps(context) {
+//   console.log("hello");
+//   const { rowId, file } = context.query;
+//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
+//   // const csvFiles = [
+//   //   'dataset.csv',
+//   //   'food.csv',
+//   //   'body.csv',
+//   //   'other(p0).csv',
+//   //   'valid.csv',
+//   //   'invalid.csv',
+//   //   'bld&urine.csv',
+//   //   'other(p2).csv',
+//   // ];
+
+//   let rowData = null;
+//   let totalPages = 0;
+//   console.log('file:', file);
+//   // Determine the CSV file to read from based on the query parameter
+//   const filePath = path.join(dataDirectory, file || 'dataset.csv');
+//   console.log('file:', file);
+//   console.log('filePath:', filePath);
+  
+//   // Search across the CSV file
+//   try {
+//     const fileStream = fs.createReadStream(filePath, 'utf8');
+//     let rowNum = 0;
+
+//     await new Promise((resolve, reject) => {
+//       fileStream.pipe(csv())
+//         .on('data', (row) => {
+//           if (row['message_id_new'] === rowId) {
+//             rowData = row;
+//           }
+//           rowNum++;
+//         })
+//         .on('end', () => {
+//           totalPages = rowNum; // Assuming each row is a unique page for simplicity
+//           resolve();
+//         })
+//         .on('error', (err) => reject(err));
+//     });
+//   } catch (error) {
+//     console.error('Error reading or parsing CSV file:', error);
+//   }
+
+//   console.log(rowData);
+//   // Ensure the Visited field exists and is set to false if not already present
+//   // if (rowData && !('Visited' in rowData)) {
+//   //   rowData['Visited'] = false;
+//   // }
+
+//   return {
+//     props: {
+//       row: rowData,
+//       totalPages,
+//     },
+//   };
+// }
+
+// export default RowDetails;
+
 import { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Typography, Box, Card, CardContent, TextField, Button, CssBaseline, IconButton, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -580,12 +1567,26 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useDarkMode } from '@/contexts/darkModeContext';
 import Layout from '@/components/layout';
+import { EditProvider, useEditContext } from '@/contexts/editContext';
 
-const RowDetails = ({ row, totalPages }) => {
+const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   const router = useRouter();
   const { rowId, file } = router.query;
   const { darkMode } = useDarkMode();
+  const { editedRows, addEditedRow } = useEditContext();
   const [editedData, setEditedData] = useState(row ? { ...row } : {});
+  const [oldData, setOldData] = useState(row ? { ...row } : {});
+  console.log("Old data: ", oldData);
+  console.log("Edited Data", editedData);
+
+  useEffect(() => {
+    if (row) {
+      setEditedData((prevData) => ({
+        ...prevData,
+        // Visited: true, // Set Visited to true
+      }));
+    }
+  }, [row]);
 
   const getImageFileName = (rowId) => {
     switch (rowId) {
@@ -600,7 +1601,7 @@ const RowDetails = ({ row, totalPages }) => {
       case '5':
         return '5.jpg';
       default:
-        return 'default.jpg'; // Provide a default image if rowId doesn't match
+        return '1.jpg'; // Provide a default image if rowId doesn't match
     }
   };
 
@@ -610,14 +1611,31 @@ const RowDetails = ({ row, totalPages }) => {
     setEditedData((prevData) => ({
       ...prevData,
       [field]: value,
+      // Visited: true
     }));
+    addEditedRow(rowId);
   };
 
+  const handlePrevious = () => {
+    if (rowIndex > 0) {
+      const previousRowId = rows[rowIndex - 1].message_id_new;
+      router.push(`/category/${previousRowId}?file=${file}`);
+    }
+  };
+
+  const handleNext = () => {
+    if (rowIndex < rows.length - 1) {
+      const nextRowId = rows[rowIndex + 1].message_id_new;
+      router.push(`/category/${nextRowId}?file=${file}`);
+    }
+  };
+  
   const handleSave = async () => {
     const updateData = {
       ...row,
       ...editedData,
     };
+
 
     try {
       const response = await fetch('/api/updateRow', {
@@ -626,13 +1644,18 @@ const RowDetails = ({ row, totalPages }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          rowId,
+          rowId: rowId,
           newData: updateData,
+          oldData: oldData,
+          currentFile: file // Pass the old data for deletion
         }),
       });
 
       if (response.ok) {
         console.log('Row updated successfully');
+        console.log("Rows pushed", editedRows);
+        alert('Change made successfully!');
+        router.back();
       } else {
         console.error('Failed to update row');
       }
@@ -662,52 +1685,102 @@ const RowDetails = ({ row, totalPages }) => {
   }
 
   const renderFormFields = () => {
-    const category = editedData['IMAGE CLASSIFIER (p1)'];
-    const validity = editedData['VALID/INVALID'];
-    const type = editedData['BLD OR URINE/OTHER'];
+    const task0 = editedData['task0'];
+    const task1 = editedData['task1'];
+    const task2 = editedData['task2'];
+    const output0 = editedData['output0'];
+    const output1 = editedData['output1'];
+    const output2 = editedData['output2'];
 
     return (
       <>
         <FormControl fullWidth margin="normal">
-          <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Category</InputLabel>
+          <InputLabel sx={{ fontSize: '14px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000' }}>Task0</InputLabel>
           <Select
-            value={category}
-            onChange={(e) => handleChange('IMAGE CLASSIFIER (p1)', e.target.value)}
-            sx={{ height: '250px' }} // Adjust height as needed
+            value={task0}
+            onChange={(e) => handleChange('task0', e.target.value)}
           >
-            <MenuItem value="FOOD">Food</MenuItem>
-            <MenuItem value="BODY PART">Body Part</MenuItem>
-            <MenuItem value="OTHER">Other</MenuItem>
+            <MenuItem value="Food">Food</MenuItem>
+            <MenuItem value="Body Part">Body Part</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
           </Select>
         </FormControl>
 
-        {category === 'OTHER' && (
-          <FormControl fullWidth margin="normal">
-            <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Validity</InputLabel>
-            <Select
-              value={validity}
-              onChange={(e) => handleChange('VALID/INVALID', e.target.value)}
-              sx={{ height: '250px' }} // Adjust height as needed
-            >
-              <MenuItem value="VALID">Valid</MenuItem>
-              <MenuItem value="INVALID">Invalid</MenuItem>
-            </Select>
-          </FormControl>
+        <TextField
+          label="image-classifier"
+          multiline
+          rows={2}
+          value={output0}
+          onChange={(e) => handleChange('output0', e.target.value)}
+          fullWidth
+          margin="normal"
+          variant="outlined"
+          sx={{marginTop:'1px'}}
+          InputProps={{
+            sx: {
+              fontSize: '14px',
+            },
+          }}
+        />
+        {task0 === 'Other' && (
+        <FormControl fullWidth margin="normal">
+          <InputLabel sx={{ fontSize: '14px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000' }}>Task1</InputLabel>
+          <Select
+            value={task1}
+            onChange={(e) => handleChange('task1', e.target.value)}
+          >
+            <MenuItem value="Valid">Valid</MenuItem>
+            <MenuItem value="Invalid">Invalid</MenuItem>
+          </Select>
+        </FormControl>
         )}
 
-        {category === 'OTHER' && validity === 'VALID' && (
-          <FormControl fullWidth margin="normal">
-            <InputLabel sx={{ fontSize: '25px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000', position: 'absolute', top: '-20px', left: '-3px' }}>Type</InputLabel>
-            <Select
-              value={type}
-              onChange={(e) => handleChange('BLD OR URINE/OTHER', e.target.value)}
-              sx={{ height: '250px' }} // Adjust height as needed
-            >
-              <MenuItem value="BLD OR URINE">Blood/Urine</MenuItem>
-              <MenuItem value="OTHER">Other</MenuItem>
-            </Select>
-          </FormControl>
-        )}
+        <TextField
+          label="text_extraction / pdf_text_extraction"
+          multiline
+          rows={12}
+          value={output1}
+          onChange={(e) => handleChange('output1', e.target.value)}
+          fullWidth
+          margin="normal"
+          variant="outlined"
+          sx={{marginTop:'1px'}}
+          InputProps={{
+            sx: {
+              fontSize: '14px',
+              minHeight:'200px'
+            },
+          }}
+        />
+  {task0 === 'Other' && task1 === 'Valid' && (
+        <FormControl fullWidth margin="normal">
+          <InputLabel sx={{ fontSize: '14px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000' }}>Task2</InputLabel>
+          <Select
+            value={task2}
+            onChange={(e) => handleChange('task2', e.target.value)}
+          >
+            <MenuItem value="Blood & Urine">Blood/Urine</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
+          </Select>
+        </FormControl>
+  )}
+        <TextField
+          label="get_document_type / image_descriptor_without_highlight"
+          multiline
+          rows={12}
+          value={output2}
+          onChange={(e) => handleChange('output2', e.target.value)}
+          fullWidth
+          margin="normal"
+          variant="outlined"
+          sx={{marginTop:'1px'}}
+          InputProps={{
+            sx: {
+              fontSize: '14px',
+              minHeight:'200px'
+            },
+          }}
+        />
       </>
     );
   };
@@ -716,21 +1789,48 @@ const RowDetails = ({ row, totalPages }) => {
     <ThemeProvider theme={theme}>
       <Layout pageTitle="Item">
         <CssBaseline />
-        <Box sx={{ display: 'flex', minHeight: '100vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
-          <Card sx={{ flex: '1 1 45%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', minHeight: '80vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+          <Card sx={{ flex: '1 1 30%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CardContent>
               <Typography variant="body1" sx={{ marginBottom: '8px', color: darkMode ? '#fff' : '#000' }}>
-                <strong>ID:</strong> {row['ID']}
+                <strong>ID:</strong> {row['message_id_new']}
               </Typography>
-              <img src={`/${imageFileName}`} alt="/Food.jpg" style={{ maxWidth: '100%' }} />
+              <img src={`/${imageFileName}`} alt="Image" style={{ maxWidth: '100%' }} />
             </CardContent>
           </Card>
 
-          <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '80vh' }}>
+          <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '128vh' }}>
             {renderFormFields()}
-            <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', marginTop: '16px' }}>
+            {/* <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', marginBottom: '2px' }}>
               Save
-            </Button>
+            </Button> */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+              {rowIndex > 0 && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={ handlePrevious }
+                >
+                  Previous
+                </Button>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSave}
+              >
+                Save
+              </Button>
+              {rowIndex < totalPages - 1 && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick= {handleNext}
+                >
+                  Next
+                </Button>
+              )}
+            </Box>
           </Box>
         </Box>
       </Layout>
@@ -738,55 +1838,90 @@ const RowDetails = ({ row, totalPages }) => {
   );
 };
 
+// export async function getServerSideProps(context) {
+//   console.log("hello");
+//   const { rowId, file } = context.query;
+//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
+
+//   let rowData = null;
+//   let totalPages = 0;
+//   console.log('file:', file);
+
+//   const filePath = path.join(dataDirectory, file);
+
+//   try {
+//     const rows = await new Promise((resolve, reject) => {
+//       const results = [];
+//       fs.createReadStream(filePath)
+//         .pipe(csv())
+//         .on('data', (data) => results.push(data))
+//         .on('end', () => resolve(results))
+//         .on('error', (error) => reject(error));
+//     });
+
+//     const rowIndex = rows.findIndex((row) => row.message_id_new === rowId);
+//     console.log("rowIndex:", rowIndex);
+//     console.log("rows:", rows);
+//     console.log("rowIndex:", rowIndex);
+
+//     if (rowIndex !== -1) {
+//       rowData = rows[rowIndex];
+//     }
+//     console.log("rowData", rowData);
+//     totalPages = Math.ceil(rows.length);
+//   } catch (error) {
+//     console.error('Error reading CSV file:', error);
+//   }
+
+//   return {
+//     props: {
+//       row: rowData,
+//       totalPages,
+//       rows,
+//       rowIndex
+//     },
+//   };
+// }
+
 export async function getServerSideProps(context) {
   const { rowId, file } = context.query;
-  const dataDirectory = path.join(process.cwd(), 'src', 'data2');
-  const csvFiles = [
-    'dataset.csv',
-    'food.csv',
-    'body.csv',
-    'other(p0).csv',
-    'valid.csv',
-    'invalid.csv',
-    'bld&urine.csv',
-    'other(p2).csv',
-  ];
-
-  let rowData = null;
-  let totalPages = 0;
-
-  // Determine the CSV file to read from based on the query parameter
-  const filePath = path.join(dataDirectory, file || 'dataset.csv');
-
-  // Search across the CSV file
+  const filePath = path.join(process.cwd(), 'src', 'data2', file);
+  
   try {
-    const fileStream = fs.createReadStream(filePath, 'utf8');
-    let rowNum = 0;
-
-    await new Promise((resolve, reject) => {
-      fileStream.pipe(csv())
-        .on('data', (row) => {
-          if (row['ID'] === rowId) {
-            rowData = row;
-          }
-          rowNum++;
-        })
+    const rows = await new Promise((resolve, reject) => {
+      const results = [];
+      fs.createReadStream(filePath)
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
         .on('end', () => {
-          totalPages = rowNum; // Assuming each row is a unique page for simplicity
-          resolve();
+          const rowIndex = results.findIndex((row) => row.message_id_new === rowId);
+          const row = results[rowIndex] || null;
+          resolve({ rows: results, row, rowIndex });
         })
-        .on('error', (err) => reject(err));
+        .on('error', (error) => reject(error));
     });
-  } catch (error) {
-    console.error('Error reading or parsing CSV file:', error);
-  }
 
-  return {
-    props: {
-      row: rowData,
-      totalPages,
-    },
-  };
+    return {
+      props: {
+        row: rows.row,
+        rowIndex: rows.rowIndex,
+        rows: rows.rows,
+        totalPages: rows.rows.length,
+      },
+    };
+  } catch (error) {
+    console.error('Error reading CSV file:', error);
+    return {
+      notFound: true, // Or handle error appropriately
+    };
+  }
 }
 
-export default RowDetails;
+
+const RowDetailsPage = (props) => (
+  <EditProvider>
+    <RowDetails {...props} />
+  </EditProvider>
+);
+
+export default RowDetailsPage;
