@@ -1119,7 +1119,7 @@ export default async function handler(req, res) {
 
       // Write updated rows back to the CSV file
       const csvStream = fs.createWriteStream(oldFilePath);
-      csvStream.write('message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2\n');
+      csvStream.write('message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,comment\n');
       oldRows.forEach(row => {
         const csvLine = formatCSVLine(row);
         csvStream.write(csvLine);
@@ -1153,19 +1153,19 @@ export default async function handler(req, res) {
           newData.task1 = getUpdatedTask1(newData);
           newData.task2 = getUpdatedTask2(newData);
         }
-        rows[rowIndex] = { ...rows[rowIndex], ...newData };
+        rows[rowIndex] = { ...rows[rowIndex], ...newData , comment: newData.comment || '-' };
       } else {
         // Check if task0 is changing and reset task1 and task2 accordingly
         if (oldData.task0 !== newData.task0 || oldData.task1!== newData.task1) {
           newData.task1 = getUpdatedTask1(newData);
           newData.task2 = getUpdatedTask2(newData);
         }
-        rows.push({ ...newData });
+        rows.push({ ...newData , comment: newData.comment || '-' });
       }
 
       // Write updated rows back to the CSV file
       const csvStream = fs.createWriteStream(newFilePath);
-      csvStream.write('message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2\n');
+      csvStream.write('message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,comment\n');
       rows.forEach(row => {
         const csvLine = formatCSVLine(row);
         csvStream.write(csvLine);
@@ -1198,19 +1198,19 @@ export default async function handler(req, res) {
         newData.task1 = getUpdatedTask1(newData);
         newData.task2 = getUpdatedTask2(newData);
       }
-      currentFileRows[currentRowIndex] = { ...currentFileRows[currentRowIndex], ...newData };
+      currentFileRows[currentRowIndex] = { ...currentFileRows[currentRowIndex], ...newData, comment: newData.comment || '-'  };
     } else {
       // Check if task0 is changing and reset task1 and task2 accordingly
       if (oldData.task0 !== newData.task0 || oldData.task1!=newData.task1) {
         newData.task1 = getUpdatedTask1(newData);
         newData.task2 = getUpdatedTask2(newData);
       }
-      currentFileRows.push({ ...newData });
+      currentFileRows.push({ ...newData, comment: newData.comment || '-'  });
     }
 
     // Write updated rows back to the current CSV file
     const currentFileStream = fs.createWriteStream(currentFilePath);
-    currentFileStream.write('message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2\n');
+    currentFileStream.write('message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,comment\n');
     currentFileRows.forEach(row => {
       const csvLine = formatCSVLine(row);
       currentFileStream.write(csvLine);
@@ -1228,11 +1228,49 @@ function determineCSVFilesToUpdate(data) {
   const { task0: category, task1: validity, task2: type } = data;
   const csvFilesToUpdate = [];
 
-  if (category === 'Food') {
-    csvFilesToUpdate.push('food.csv');
-  } else if (category === 'Body Part') {
+  if(category=== 'A'){
+    csvFilesToUpdate.push('A.csv');
+    if (validity === 'Valid') {
+      csvFilesToUpdate.push('valid.csv');
+      if (type === 'Blood & Urine') {
+        csvFilesToUpdate.push('bldurine.csv');
+      } else if (type === 'Other') {
+        csvFilesToUpdate.push('other(p2).csv');
+      }
+    } else if (validity === 'Invalid') {
+      csvFilesToUpdate.push('invalid.csv');
+    }
+  }
+  else if (category === 'B') {
+    csvFilesToUpdate.push('B.csv');
+    if (validity === 'Valid') {
+      csvFilesToUpdate.push('valid.csv');
+      if (type === 'Blood & Urine') {
+        csvFilesToUpdate.push('bldurine.csv');
+      } else if (type === 'Other') {
+        csvFilesToUpdate.push('other(p2).csv');
+      }
+    } else if (validity === 'Invalid') {
+      csvFilesToUpdate.push('invalid.csv');
+    }
+  } else if (category === 'C') {
     csvFilesToUpdate.push('bodypart.csv');
-  } else if (category === 'Other') {
+  } else if (category === 'D') {
+    csvFilesToUpdate.push('food.csv');
+  } else if (category === 'E') {
+    csvFilesToUpdate.push('E.csv');
+    if (validity === 'Valid') {
+      csvFilesToUpdate.push('valid.csv');
+      if (type === 'Blood & Urine') {
+        csvFilesToUpdate.push('bldurine.csv');
+      } else if (type === 'Other') {
+        csvFilesToUpdate.push('other(p2).csv');
+      }
+    } else if (validity === 'Invalid') {
+      csvFilesToUpdate.push('invalid.csv');
+    }
+  }
+  else if (category === 'Other') {
     csvFilesToUpdate.push('other(p0).csv');
     if (validity === 'Valid') {
       csvFilesToUpdate.push('valid.csv');
@@ -1256,9 +1294,19 @@ function escapeField(text) {
   return text;
 }
 
+// function formatCSVLine(row) {
+//   const fields = ['message_id_new', 'user_id', 'task0', 'task1', 'task2','meta_fileURI','output0','output1','output2','comment'];
+//   return fields.map(field => escapeField(row[field])).join(',') + '\n';
+// }
 function formatCSVLine(row) {
-  const fields = ['message_id_new', 'user_id', 'task0', 'task1', 'task2','meta_fileURI','output0','output1','output2'];
-  return fields.map(field => escapeField(row[field])).join(',') + '\n';
+  const fields = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'meta_fileURI', 'output0', 'output1', 'output2', 'comment'];
+  const values = fields.map(field => {
+    if (field === 'comment') {
+      return escapeField(row.comment || '-'); // Ensure comment field is properly handled
+    }
+    return escapeField(row[field] || ''); // Ensure other fields are properly handled
+  });
+  return values.join(',') + '\n';
 }
 
 function getUpdatedTask1(data) {

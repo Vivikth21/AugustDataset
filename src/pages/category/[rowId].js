@@ -1569,6 +1569,7 @@ import { useDarkMode } from '@/contexts/darkModeContext';
 import Layout from '@/components/layout';
 import { EditProvider, useEditContext } from '@/contexts/editContext';
 
+
 const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   const router = useRouter();
   const { rowId, file } = router.query;
@@ -1576,6 +1577,9 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   const { editedRows, addEditedRow } = useEditContext();
   const [editedData, setEditedData] = useState(row ? { ...row } : {});
   const [oldData, setOldData] = useState(row ? { ...row } : {});
+  const [fileName, setFileName] = useState('');
+  const [showCommentField, setShowCommentField] = useState(!!(row.comment && row.comment !== '-'));
+  const [comment, setComment] = useState(row ? row.comment || '' : '');
   console.log("Old data: ", oldData);
   console.log("Edited Data", editedData);
 
@@ -1585,27 +1589,56 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
         ...prevData,
         // Visited: true, // Set Visited to true
       }));
+      setComment(row.comment || '');
     }
-  }, [row]);
+    const getFileName = async (rowId) => {
+      try {
+        const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${rowId}.jpg`);
+        if (imageResponse.ok) {
+          setFileName(`images/${rowId}.jpg`);
+        } else {
+          const pdfResponse = await fetch(`/api/checkFileExists?filePath=pdfs/${rowId}.pdf`);
+          if (pdfResponse.ok) {
+            setFileName(`pdfs/${rowId}.pdf`);
+          } else {
+            setFileName('');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking file existence:', error);
+        setFileName('');
+      }
+    };
 
-  const getImageFileName = (rowId) => {
-    switch (rowId) {
-      case '1':
-        return '1.jpg';
-      case '2':
-        return '2.jpg';
-      case '3':
-        return '3.jpg';
-      case '4':
-        return '4.jpg';
-      case '5':
-        return '5.jpg';
-      default:
-        return '1.jpg'; // Provide a default image if rowId doesn't match
-    }
-  };
+    getFileName(rowId);
+  }, [row,rowId]);
 
-  const imageFileName = getImageFileName(rowId);
+  // const getImageFileName = (rowId) => {
+  //   console.log("The Row id in this function is: ",rowId);
+  //   // switch (rowId) {
+  //   //   case '1':
+  //   //     return '1.jpg';
+  //   //   case '2':
+  //   //     return '2.jpg';
+  //   //   case '3':
+  //   //     return '3.jpg';
+  //   //   case '4':
+  //   //     return '4.jpg';
+  //   //   case '5':
+  //   //     return '5.jpg';
+  //   //   default:
+  //   //     return `images/${rowId}.jpg` ;
+  //   // }
+  //   if(`images/${rowId}.jpg`){
+  //     return `images/${rowId}.jpg`;
+  //   }else{
+  //     console.log("ENtered the else condition");
+  //     return `pdfs/${rowId}.pdf`
+  //   }
+  // };
+
+  // const imageFileName = getImageFileName(rowId);
+  const isPdf = fileName.endsWith('.pdf');
 
   const handleChange = (field, value) => {
     setEditedData((prevData) => ({
@@ -1613,9 +1646,15 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
       [field]: value,
       // Visited: true
     }));
-    addEditedRow(rowId);
+    // addEditedRow(rowId);
   };
-
+  const handleCommentChange = (value) => {
+    setComment(value);
+    setEditedData((prevData) => ({
+      ...prevData,
+      comment: value,
+    }));
+  };
   const handlePrevious = () => {
     if (rowIndex > 0) {
       const previousRowId = rows[rowIndex - 1].message_id_new;
@@ -1630,11 +1669,35 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
     }
   };
   
-  const handleSave = async () => {
-    const updateData = {
-      ...row,
-      ...editedData,
+  // const handleSave = async () => {
+  //   const updateData = {
+  //     ...row,
+  //     ...editedData,
+  //     comment: comment || '',
+  //   };
+
+    const handleConditionalFields = (data) => {
+      const newData = { ...data };
+    
+      // if (!(newData.task0 === 'Other' || newData.task0 === 'A' || newData.task0 === 'B' || newData.task0 === 'E') || newData.task1 !== 'Valid') {
+      //   newData.task2 = '-';
+      // }
+      if(newData.task0==='C' || newData.task1==='D'){
+        newData.task1 = '-'
+        newData.task2= '-'
+      }else if((newData.task0 === 'Other' || newData.task0 === 'A' || newData.task0 === 'B' || newData.task0 === 'E') && newData.task1 === 'Invalid'){
+        newData.task2 = '-'
+      }
+
+      return newData;
     };
+    
+    const handleSave = async () => {
+      const updateData = handleConditionalFields({
+        ...row,
+        ...editedData,
+        comment: comment || '',
+      });
 
 
     try {
@@ -1652,6 +1715,7 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
       });
 
       if (response.ok) {
+        addEditedRow(rowId);
         console.log('Row updated successfully');
         console.log("Rows pushed", editedRows);
         alert('Change made successfully!');
@@ -1700,12 +1764,15 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
             value={task0}
             onChange={(e) => handleChange('task0', e.target.value)}
           >
-            <MenuItem value="Food">Food</MenuItem>
-            <MenuItem value="Body Part">Body Part</MenuItem>
+            <MenuItem value = "A">A </MenuItem>
+            <MenuItem value = "B">B </MenuItem>
+            <MenuItem value = "C">C </MenuItem>
+            <MenuItem value = "D">D </MenuItem>
+            <MenuItem value = "E">E </MenuItem>
             <MenuItem value="Other">Other</MenuItem>
           </Select>
         </FormControl>
-
+{/* 
         <TextField
           label="image-classifier"
           multiline
@@ -1721,8 +1788,8 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
               fontSize: '14px',
             },
           }}
-        />
-        {task0 === 'Other' && (
+        /> */}
+        {(task0 === 'Other' || task0==='A' || task0==='B' || task0==='E') && (
         <FormControl fullWidth margin="normal">
           <InputLabel sx={{ fontSize: '14px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000' }}>Task1</InputLabel>
           <Select
@@ -1752,7 +1819,7 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
             },
           }}
         />
-  {task0 === 'Other' && task1 === 'Valid' && (
+  {(task0 === 'Other' || task0==='A' || task0==='B' || task0==='E') && task1 === 'Valid' && (
         <FormControl fullWidth margin="normal">
           <InputLabel sx={{ fontSize: '14px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000' }}>Task2</InputLabel>
           <Select
@@ -1785,57 +1852,215 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
     );
   };
 
-  return (
-    <ThemeProvider theme={theme}>
-      <Layout pageTitle="Item">
-        <CssBaseline />
-        <Box sx={{ display: 'flex', minHeight: '80vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
-          <Card sx={{ flex: '1 1 30%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CardContent>
-              <Typography variant="body1" sx={{ marginBottom: '8px', color: darkMode ? '#fff' : '#000' }}>
-                <strong>ID:</strong> {row['message_id_new']}
-              </Typography>
-              <img src={`/${imageFileName}`} alt="Image" style={{ maxWidth: '100%' }} />
-            </CardContent>
-          </Card>
+  // return (
+    // <ThemeProvider theme={theme}>
+    //   <Layout pageTitle="Item">
+    //     <CssBaseline />
+    //     <Box sx={{ display: 'flex', minHeight: '80vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+    //       <Card sx={{ flex: '1 1 30%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+    //         <CardContent>
+    //           {/* <Typography variant="body1" sx={{ marginBottom: '8px', color: darkMode ? '#fff' : '#000' }}>
+    //             <strong>ID:</strong> {row['message_id_new']}
+    //           </Typography> */}
+    //           {(isPdf ? <iframe src = {`/${fileName}`} alt = "pdf" style={{maxWidth: '100%',height:'1000px',width:'600px'}}/> :
+    //           <img src={`/${fileName}`} alt="Image" style={{ maxWidth:'110%',height:'1000px'}} />
+    //           )}
+    //         </CardContent>
+    //       </Card>
 
-          <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '128vh' }}>
-            {renderFormFields()}
-            {/* <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', marginBottom: '2px' }}>
-              Save
-            </Button> */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
-              {rowIndex > 0 && (
+    //       <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '128vh' }}>
+    //         {renderFormFields()}
+    //         {/* <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', marginBottom: '2px' }}>
+    //           Save
+    //         </Button> */}
+    //         {showCommentField ? (
+    //             <>
+    //               <TextField
+    //                 label="Comment"
+    //                 value={comment}
+    //                 onChange={(e) => setComment(e.target.value)}
+    //                 fullWidth
+    //                 multiline
+    //                 rows={4}
+    //                 margin="normal"
+    //                 variant="outlined"
+    //                 sx={{ marginTop: '1px' }}
+    //                 InputProps={{
+    //                   sx: {
+    //                     fontSize: '14px',
+    //                     minHeight: '100px'
+    //                   },
+    //                 }}
+    //               />
+    //               <Button
+    //                 variant="outlined"
+    //                 color="secondary"
+    //                 onClick={() => {
+    //                   setShowCommentField(false);
+    //                   setComment('');
+    //                 }}
+    //               >
+    //                 Cancel
+    //               </Button>
+    //             </>
+    //           ) : (
+    //             <Button
+    //               variant="outlined"
+    //               color="primary"
+    //               onClick={() => setShowCommentField(true)}
+    //             >
+    //               + Add Comment
+    //             </Button>
+    //           )}
+    //             {/* Save and Reset buttons */}
+    //     <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', gap: '8px' }}>
+    //         <Button
+    //           variant="contained"
+    //           color="primary"
+    //           onClick={handleSave}
+    //         >
+    //           Save
+    //         </Button>
+    //         <Button
+    //           variant="outlined"
+    //           color="secondary"
+    //           onClick={() => setEditedData({ ...oldData })}
+    //         >
+    //           Reset
+    //         </Button>
+    //       </Box>
+
+    //       {/* Back and Previous buttons */}
+    //       <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', gap: '8px' }}>
+    //         {rowIndex > 0 && (
+    //           <Button
+    //             variant="contained"
+    //             color="primary"
+    //             onClick={handlePrevious}
+    //           >
+    //             Previous
+    //           </Button>
+    //         )}
+    //         <Button
+    //           variant="contained"
+    //           color="primary"
+    //           onClick={handleNext}
+    //         >
+    //           Next
+    //         </Button>
+    //       </Box>
+    //     </Box>
+    //     </Box>
+    //   </Layout>
+    // </ThemeProvider>
+    return (
+      <ThemeProvider theme={theme}>
+        <Layout pageTitle="Item">
+          <CssBaseline />
+          <Box sx={{ display: 'flex', minHeight: '80vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
+            <Card sx={{ flex: '1 1 30%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+              <CardContent>
+                {/* Display image or PDF */}
+                {isPdf ? (
+                  <iframe src={`/${fileName}`} alt="pdf" style={{ maxWidth: '100%', height: '1000px', width: '600px' }} />
+                ) : (
+                  <img src={`/${fileName}`} alt="Image" style={{ maxWidth: '110%', height: '1000px' }} />
+                )}
+              </CardContent>
+            </Card>
+    
+            <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '128vh' }}>
+              {/* Render form fields */}
+              {renderFormFields()}
+    
+              {/* Add comment section */}
+              {showCommentField ? (
+                <>
+                  <TextField
+                    label="Comment"
+                    value={comment}
+                    onChange={(e) => handleCommentChange(e.target.value)}
+                    fullWidth
+                    multiline
+                    rows={4}
+                    margin="normal"
+                    variant="outlined"
+                    sx={{ marginTop: '1px' }}
+                    InputProps={{
+                      sx: {
+                        fontSize: '14px',
+                        minHeight: '100px'
+                      },
+                    }}
+                  />
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={() => {
+                      setShowCommentField(false);
+                      setComment('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   color="primary"
-                  onClick={ handlePrevious }
+                  onClick={() => setShowCommentField(true)}
                 >
-                  Previous
+                  + Add Comment
                 </Button>
               )}
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSave}
-              >
-                Save
-              </Button>
-              {rowIndex < totalPages - 1 && (
+    
+              {/* Save and Reset buttons */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', marginTop: '16px', gap: '8px' }}>
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick= {handleNext}
+                  onClick={handleSave}
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => {setEditedData({ ...oldData }),setShowCommentField(false),
+                  setComment('')}}
+                >
+                  Reset
+                </Button>
+              </Box>
+    
+              {/* Back and Previous buttons */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', gap: '8px' }}>
+                {rowIndex > 0 && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handlePrevious}
+                    sx={{height:'25px',width:'50px',fontSize:'10px'}}
+                  >
+                    Previous
+                  </Button>
+                )}
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNext}
+                  sx={{height:'25px',width:'50px',fontSize:'10px'}}
                 >
                   Next
                 </Button>
-              )}
+              </Box>
             </Box>
           </Box>
-        </Box>
-      </Layout>
-    </ThemeProvider>
-  );
+        </Layout>
+      </ThemeProvider>
+    );
+    
+  // );
 };
 
 // export async function getServerSideProps(context) {

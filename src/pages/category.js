@@ -1191,7 +1191,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Select, MenuItem, TextField,IconButton } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Select, MenuItem, TextField,IconButton ,FormControl ,InputLabel} from '@mui/material';
 import { styled } from '@mui/system';
 import fs from 'fs';
 import path from 'path';
@@ -1200,7 +1200,8 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/layout';
 import { useDarkMode } from '@/contexts/darkModeContext';
 import { EditProvider, useEditContext } from '@/contexts/editContext';
-import DownloadIcon from '@mui/icons-material/Download';
+import FlagIcon from '@mui/icons-material/Flag';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 
 const PAGE_SIZES = [10, 20, 30, 40, 50]; // Options for rows per page
 const DEFAULT_PAGE_SIZE = 30; // Default number of items per page
@@ -1214,11 +1215,56 @@ const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: ini
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [searchTerm, setSearchTerm] = useState(''); // State for search term
-  console.log("The rows are: ",editedRows);
+  const [flaggedRows, setFlaggedRows] = useState(() => {
+    // Load flagged rows from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const storedFlaggedRows = localStorage.getItem('flaggedRows');
+      return storedFlaggedRows ? JSON.parse(storedFlaggedRows) : [];
+    }
+    return [];
+  });
+  const [filterOption, setFilterOption] = useState(''); 
+  const [localEditedRows, setLocalEditedRows] = useState(() => {
+    // Load edited rows from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const storedEditedRows = localStorage.getItem('editedRows');
+      return storedEditedRows ? JSON.parse(storedEditedRows) : [];
+    }
+    return [];
+  });
 
   useEffect(() => {
     setTotalPages(Math.ceil(data.length / rowsPerPage));
   }, [rowsPerPage, data]);
+
+  useEffect(() => {
+    // Update localStorage when flaggedRows state changes
+    localStorage.setItem('flaggedRows', JSON.stringify(flaggedRows));
+  }, [flaggedRows]);
+
+  useEffect(() => {
+    const handleRouteChange = () => {
+      const updatedEditedRows = JSON.parse(localStorage.getItem('editedRows') || '[]');
+      setLocalEditedRows(updatedEditedRows);
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
+
+  const toggleFlag = (messageId) => {
+    setFlaggedRows((prev) => {
+      if (prev.includes(messageId)) {
+        return prev.filter(id => id !== messageId);
+      } else {
+        return [...prev, messageId];
+      }
+    });
+    console.log("The flagged and edited rows are ",flaggedRows,editedRows);
+  };
 
   const navigateToPage = (page) => {
     router.push(`/category?file=${file}&page=${page}&rowsPerPage=${rowsPerPage}`);
@@ -1226,7 +1272,7 @@ const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: ini
   };
 
   const handleChangeRowsPerPage = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
+    const newRowsPerPage = parseInt(event.target.value, 10); 
     setRowsPerPage(newRowsPerPage);
     navigateToPage(1); // Navigate to first page immediately after changing rows per page
   };
@@ -1267,12 +1313,19 @@ const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: ini
     );
   };
 
-  // Filter data based on search term
   const filteredData = data.filter((row) =>
-    row['message_id_new'].toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  row['message_id_new'].toLowerCase().includes(searchTerm.toLowerCase()) &&
+  (filterOption === '' || (filterOption === 'edited' && localEditedRows.includes(row.message_id_new)) ||
+    (filterOption === 'flagged' && flaggedRows.includes(row.message_id_new)))
+);
   const downloadCSV = async () => {
-    const res = await fetch(`/api/download?file=${file}`);
+    const res = await fetch(`/api/download?file=${file}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ filterOption, flaggedRows, localEditedRows, searchTerm }),
+    });
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1302,10 +1355,25 @@ const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: ini
               fontSize: '12px', // Adjust font size as needed
             },}}
           />
+                    <FormControl variant="outlined" sx={{ marginBottom: '16px', minWidth: '120px'}}>
+            <InputLabel id="filter-label" sx={{ color: darkMode ? '#fff' : '#000'}}>Filter</InputLabel>
+            <Select
+              labelId="filter-label"
+              value={filterOption}
+              onChange={(e) => setFilterOption(e.target.value)}
+              label="Filter"
+              sx={{
+                '& .MuiOutlinedInput-input': { color: darkMode ? 'white' : 'black' },
+                '& .MuiSelect-icon': { color: darkMode ? 'white' : 'black' },
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? '#fff' : '#000' }
+              }}
+            >
+              <MenuItem value="">None</MenuItem>
+              <MenuItem value="edited">Edited</MenuItem>
+              <MenuItem value="flagged">Flagged</MenuItem>
+            </Select>
+          </FormControl>
           <Button variant="contained" onClick={downloadCSV} sx={{ marginBottom: '16px', backgroundColor: '#007bff', color: 'white' }}>Download CSV</Button>
-          {/* <IconButton onClick={downloadCSV} sx={{ marginBottom: '16px', marginLeft: 'auto', color: darkMode ? 'white' : 'black' }}>
-            <DownloadIcon />
-          </IconButton> */}
         </Box>
 
         {/* Main Content Area */}
@@ -1321,18 +1389,29 @@ const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: ini
               </TableHead>
               <TableBody>
                 {filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((row, rowIndex) => (
-                  <StyledTableRow key={rowIndex} darkMode={darkMode} sx = {{ border: editedRows.includes(row.message_id_new) ? '100px solid green' : '4px solid red'}} >
-                    <TableCell sx={{ color: darkMode ? 'white' : 'black' }}>
-                      <Link href={`/category/${row.message_id_new}?file=${file}`} passHref>
-                      {/* <Link href={`/category/${row.ID}?file=${file}`} passHref> */}
-                        <Button variant="text" sx={{ padding: 0, color: darkMode ? 'lightblue' : 'blue', marginLeft: '8px' }}>{row['message_id_new']}</Button>
-                      </Link>
-                    </TableCell>
-                    <TableCell sx={{ color: editedRows.includes(row.message_id_new) ? 'green' : darkMode? 'white' : 'black' }}>{row['user_id']}</TableCell>
-                    <TableCell sx={{ color:  editedRows.includes(row.message_id_new) ? 'green' : darkMode? 'white' : 'black' }}>{row['task0']}</TableCell>
-                    <TableCell sx={{ color:  editedRows.includes(row.message_id_new) ? 'green' : darkMode? 'white' : 'black' }}>{row['task1']}</TableCell>
-                    <TableCell sx={{ color:  editedRows.includes(row.message_id_new) ? 'green' : darkMode? 'white' : 'black' }}>{row['task2']}</TableCell>
-                  </StyledTableRow>
+                  <StyledTableRow
+                  key={rowIndex}
+                  darkMode={darkMode}
+                  edited={localEditedRows.includes(row.message_id_new)}
+                  flagged={flaggedRows.includes(row.message_id_new)}
+                >
+                  <TableCell sx={{ color: darkMode ? 'white' : 'black', display: 'flex', alignItems: 'center' }}>
+                    {flaggedRows.includes(row.message_id_new) && (
+                      <Box sx={{ width: '4px', height: '100%', backgroundColor: '#9d46b3', marginRight: '8px' }} />
+                    )}
+                    <Link href={`/category/${row.message_id_new}?file=${file}`} passHref>
+                      <Button variant="text" sx={{ padding: 0, color: darkMode ? 'lightblue' : 'blue' }}>{row['message_id_new']}</Button>
+                    </Link>
+                  </TableCell>
+                  <TableCell sx={{ color: darkMode ? 'white' : 'black' }}>{row['user_id']}</TableCell>
+                  <TableCell sx={{ color: darkMode ? 'white' : 'black' }}>{row['task0']}</TableCell>
+                  <TableCell sx={{ color: darkMode ? 'white' : 'black' }}>{row['task1']}</TableCell>
+                  <TableCell sx={{ color: darkMode ? 'white' : 'black' }}>{row['task2']}</TableCell>
+                  <TableCell sx={{ color: darkMode ? 'white' : 'black' }}>{row['comment'] ? row['comment'] : '-'}</TableCell>
+                  <IconButton onClick={() => toggleFlag(row.message_id_new)} sx={{ marginLeft: 'auto', color: flaggedRows.includes(row.message_id_new) ? '#9d46b3' : darkMode ? 'white' : 'black' }}>
+                      {flaggedRows.includes(row.message_id_new) ? <FlagIcon /> : <FlagOutlinedIcon />}
+                    </IconButton>
+                </StyledTableRow>
                 ))}
               </TableBody>
             </Table>
@@ -1361,10 +1440,56 @@ const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: ini
   );
 };
 
-const StyledTableRow = styled(TableRow)(({ darkMode }) => ({
+const StyledTableRow = styled(TableRow)(({ darkMode, edited, flagged }) => ({
   '&:hover': {
     backgroundColor: darkMode ? '#444' : '#f5f5f5',
   },
+  ...(edited && flagged && {
+    position: 'relative',
+    '& td:first-of-type::before': {
+      content: '""',
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: '6px',
+      backgroundColor: '#9d46b3', // Red background on the left
+    },
+    '& td:last-of-type::after': {
+      content: '""',
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: '6px',
+      backgroundColor: 'green', // Green background on the right
+    },
+  }),
+  ...(edited && !flagged && {
+    position: 'relative',
+    '& td:first-of-type::before': {
+      content: '""',
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: '6px',
+      backgroundColor: 'green', // Green background on the right only
+    },
+  }),
+  ...(flagged && !edited && {
+    position: 'relative',
+    '& td:first-of-type::before': {
+      content: '""',
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: '6px',
+      backgroundColor: '#9d46b3', // Red background on the left only 7715c2
+    },
+  }),
+  
 }));
 
 export async function getServerSideProps(context) {
@@ -1377,7 +1502,7 @@ export async function getServerSideProps(context) {
   const filePath = path.join(dataDirectory, file);
 
   const data = [];
-  const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2']; // Specify columns to use
+  const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2','comment']; // Specify columns to use
 
   await new Promise((resolve, reject) => {
     fs.createReadStream(filePath)
@@ -1385,7 +1510,8 @@ export async function getServerSideProps(context) {
       .on('data', (row) => {
         // Extract necessary fields and store them
         const { message_id_new, user_id, task0, task1, task2 } = row;
-        data.push({ message_id_new, user_id, task0, task1, task2});
+        const comment = row.comment || '';
+        data.push({ message_id_new, user_id, task0, task1, task2, comment});
       })
       .on('end', resolve)
       .on('error', reject);
