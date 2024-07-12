@@ -196,7 +196,7 @@
 
 import AWS from 'aws-sdk';
 import multer from 'multer';
-import multerS3 from 'multer-s3';
+import { Readable } from 'stream';
 
 // Configure AWS
 AWS.config.update({
@@ -207,17 +207,8 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-// Configure multer for S3 upload
-const upload = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: process.env.S3_BUCKET_NAME,
-    acl: 'private',
-    key: function (req, file, cb) {
-      cb(null, `datasets/${file.originalname}`);
-    },
-  }),
-});
+// Configure multer for memory storage
+const upload = multer({ storage: multer.memoryStorage() });
 
 export const config = {
   api: {
@@ -227,9 +218,9 @@ export const config = {
 
 export default function handler(req, res) {
   if (req.method === 'POST') {
-    upload.single('file')(req, res, (err) => {
+    upload.single('file')(req, res, async (err) => {
       if (err) {
-        return res.status(500).json({ message: 'Failed to upload file', error: err.message });
+        return res.status(500).json({ message: 'Failed to process file', error: err.message });
       }
 
       const { name } = req.body;
@@ -239,13 +230,84 @@ export default function handler(req, res) {
         return res.status(400).json({ message: 'Missing name or file' });
       }
 
-      // Return the S3 file location
-      const fileLocation = file.location;
+      try {
+        // Upload file to S3
+        const params = {
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: `datasets/${file.originalname}`,
+          Body: Readable.from(file.buffer),
+          ContentType: file.mimetype,
+        };
 
-      res.status(200).json({ message: 'Dataset created successfully', fileLocation });
+        const uploadResult = await s3.upload(params).promise();
+
+        // Return the S3 file location
+        const fileLocation = uploadResult.Location;
+
+        res.status(200).json({ message: 'Dataset created successfully', fileLocation });
+      } catch (error) {
+        console.error('S3 upload error:', error);
+        res.status(500).json({ message: 'Failed to upload file to S3', error: error.message });
+      }
     });
   } else {
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+// import AWS from 'aws-sdk';
+// import multer from 'multer';
+// import multerS3 from 'multer-s3';
+
+// // Configure AWS
+// AWS.config.update({
+//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+//   region: process.env.AWS_REGION,
+// });
+
+// const s3 = new AWS.S3();
+
+// // Configure multer for S3 upload
+// const upload = multer({
+//   storage: multerS3({
+//     s3: s3,
+//     bucket: process.env.S3_BUCKET_NAME,
+//     acl: 'private',
+//     key: function (req, file, cb) {
+//       cb(null, `datasets/${file.originalname}`);
+//     },
+//   }),
+// });
+
+// export const config = {
+//   api: {
+//     bodyParser: false,
+//   },
+// };
+
+// export default function handler(req, res) {
+//   if (req.method === 'POST') {
+//     upload.single('file')(req, res, (err) => {
+//       if (err) {
+//         return res.status(500).json({ message: 'Failed to upload file', error: err.message });
+//       }
+
+//       const { name } = req.body;
+//       const { file } = req;
+
+//       if (!name || !file) {
+//         return res.status(400).json({ message: 'Missing name or file' });
+//       }
+
+//       // Return the S3 file location
+//       const fileLocation = file.location;
+
+//       res.status(200).json({ message: 'Dataset created successfully', fileLocation });
+//     });
+//   } else {
+//     res.setHeader('Allow', ['POST']);
+//     res.status(405).end(`Method ${req.method} Not Allowed`);
+//   }
+// }
