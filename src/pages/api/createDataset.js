@@ -138,44 +138,100 @@
 //     res.status(405).end(`Method ${req.method} Not Allowed`);
 //   }
 // }
-import fs from 'fs';
-import path from 'path';
-import multer from 'multer';
+// import fs from 'fs';
+// import path from 'path';
+// import multer from 'multer';
 
-// Define storage for uploaded files
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dataDirectory = path.join(process.cwd(), 'src', 'data2'); // Adjust as per your directory structure
-    cb(null, dataDirectory);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${file.originalname}`); // Use original file name or customize as needed
-  },
+// // Define storage for uploaded files
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     const dataDirectory = path.join(process.cwd(), 'src', 'data2'); // Adjust as per your directory structure
+//     cb(null, dataDirectory);
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, `${file.originalname}`); // Use original file name or customize as needed
+//   },
+// });
+
+// // Initialize multer instance with storage options
+// const upload = multer({ storage });
+
+// // API handler function
+// export const config = {
+//   api: {
+//     bodyParser: false, // Disable default bodyParser as multer handles it
+//   },
+// };
+
+// export default function handler(req, res) {
+//   if (req.method === 'POST') {
+//     // Use `upload.single('file')` middleware to handle single file uploads
+//     upload.single('file')(req, res, (err) => {
+//       if (err instanceof multer.MulterError) {
+//         // A Multer error occurred when uploading
+//         return res.status(500).json({ message: 'Failed to upload file' });
+//       } else if (err) {
+//         // An unknown error occurred
+//         return res.status(500).json({ message: 'Unknown error occurred' });
+//       }
+
+//       // File uploaded successfully, handle other form data
+//       const { name } = req.body;
+//       const { file } = req;
+
+//       if (!name || !file) {
+//         return res.status(400).json({ message: 'Missing name or file' });
+//       }
+
+//       // Return the file path in the response
+//       const filePath = path.join('src', 'data2', `${file.originalname}`);
+
+//       res.status(200).json({ message: 'Dataset created successfully', filePath });
+//     });
+//   } else {
+//     res.setHeader('Allow', ['POST']);
+//     res.status(405).end(`Method ${req.method} Not Allowed`);
+//   }
+// }
+
+import AWS from 'aws-sdk';
+import multer from 'multer';
+import multerS3 from 'multer-s3';
+
+// Configure AWS
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
 });
 
-// Initialize multer instance with storage options
-const upload = multer({ storage });
+const s3 = new AWS.S3();
 
-// API handler function
+// Configure multer for S3 upload
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: process.env.S3_BUCKET_NAME,
+    acl: 'private',
+    key: function (req, file, cb) {
+      cb(null, `datasets/${file.originalname}`);
+    },
+  }),
+});
+
 export const config = {
   api: {
-    bodyParser: false, // Disable default bodyParser as multer handles it
+    bodyParser: false,
   },
 };
 
 export default function handler(req, res) {
   if (req.method === 'POST') {
-    // Use `upload.single('file')` middleware to handle single file uploads
     upload.single('file')(req, res, (err) => {
-      if (err instanceof multer.MulterError) {
-        // A Multer error occurred when uploading
-        return res.status(500).json({ message: 'Failed to upload file' });
-      } else if (err) {
-        // An unknown error occurred
-        return res.status(500).json({ message: 'Unknown error occurred' });
+      if (err) {
+        return res.status(500).json({ message: 'Failed to upload file', error: err.message });
       }
 
-      // File uploaded successfully, handle other form data
       const { name } = req.body;
       const { file } = req;
 
@@ -183,10 +239,10 @@ export default function handler(req, res) {
         return res.status(400).json({ message: 'Missing name or file' });
       }
 
-      // Return the file path in the response
-      const filePath = path.join('src', 'data2', `${file.originalname}`);
+      // Return the S3 file location
+      const fileLocation = file.location;
 
-      res.status(200).json({ message: 'Dataset created successfully', filePath });
+      res.status(200).json({ message: 'Dataset created successfully', fileLocation });
     });
   } else {
     res.setHeader('Allow', ['POST']);
