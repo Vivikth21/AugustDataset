@@ -19,7 +19,6 @@
 
 import AWS from 'aws-sdk';
 
-// Configure AWS
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -28,23 +27,27 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
+const datasetPrefix = process.env.S3_DATASET_PREFIX || 'datasets/';
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const params = {
         Bucket: process.env.S3_BUCKET_NAME,
-        Prefix: 'datasets/', // Adjust this prefix if your datasets are stored in a different folder
+        Prefix: datasetPrefix,
       };
 
       const s3Response = await s3.listObjectsV2(params).promise();
 
       const datasets = s3Response.Contents
-        .filter(object => object.Key.endsWith('.csv'))
-        .map((object, index) => ({
-          id: index + 1,
-          name: object.Key.split('/').pop().replace('.csv', ''),
-          createdAt: object.LastModified.toISOString(),
-        }));
+        ? s3Response.Contents
+            .filter(object => object.Key.endsWith('.csv'))
+            .map((object, index) => ({
+              id: index + 1,
+              name: object.Key.split('/').pop().replace('.csv', ''),
+              createdAt: object.LastModified.toISOString(),
+            }))
+        : [];
 
       res.status(200).json({ datasets });
     } catch (error) {
