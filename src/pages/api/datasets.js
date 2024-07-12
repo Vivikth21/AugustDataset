@@ -17,42 +17,31 @@
 //   }
 // }
 
-import AWS from 'aws-sdk';
-
-AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-});
-
-const s3 = new AWS.S3();
-
-const datasetPrefix = process.env.S3_DATASET_PREFIX || 'datasets/';
-
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
+      console.log('Starting to fetch datasets');
+      console.log('S3 Bucket Name:', process.env.S3_BUCKET_NAME);
+      console.log('Dataset Prefix:', datasetPrefix);
+
       const params = {
         Bucket: process.env.S3_BUCKET_NAME,
         Prefix: datasetPrefix,
       };
 
+      console.log('Params:', JSON.stringify(params));
+
       const s3Response = await s3.listObjectsV2(params).promise();
 
-      const datasets = s3Response.Contents
-        ? s3Response.Contents
-            .filter(object => object.Key.endsWith('.csv'))
-            .map((object, index) => ({
-              id: index + 1,
-              name: object.Key.split('/').pop().replace('.csv', ''),
-              createdAt: object.LastModified.toISOString(),
-            }))
-        : [];
+      console.log('S3 Response:', JSON.stringify(s3Response, null, 2));
 
-      res.status(200).json({ datasets });
+      // ... rest of your code ...
+
     } catch (error) {
       console.error('Error fetching datasets:', error);
-      res.status(500).json({ message: 'Error fetching datasets', error: error.message });
+      console.error('Error stack:', error.stack);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      res.status(500).json({ message: 'Error fetching datasets', error: error.message, stack: error.stack });
     }
   } else {
     res.status(405).json({ message: 'Method Not Allowed' });
