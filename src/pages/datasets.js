@@ -67,6 +67,40 @@ const Datasets = () => {
   //     console.error('Failed to create dataset', error);
   //   }
   // };
+  // const handleCreateDataset = async (name, file) => {
+  //   const formData = new FormData();
+  //   formData.append('name', name);
+  //   formData.append('file', file);
+  
+  //   try {
+  //     const response = await fetch('/api/createDataset', {
+  //       method: 'POST',
+  //       body: formData,
+  //     });
+  
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       const fileLocation = data.fileLocation;
+  
+  //       const classifyResponse = await fetch('/api/classifyDataset', {
+  //         method: 'POST',
+  //         headers: { 'Content-Type': 'application/json' },
+  //         body: JSON.stringify({ fileLocation }),
+  //       });
+  
+  //       if (classifyResponse.ok) {
+  //         fetchDatasets(); // Refresh the datasets list
+  //         setModalOpen(false); // Close modal after dataset creation
+  //       } else {
+  //         console.error('Failed to classify dataset');
+  //       }
+  //     } else {
+  //       console.error('Failed to create dataset');
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to create dataset', error);
+  //   }
+  // };
   const handleCreateDataset = async (name, file) => {
     const formData = new FormData();
     formData.append('name', name);
@@ -89,7 +123,16 @@ const Datasets = () => {
         });
   
         if (classifyResponse.ok) {
-          fetchDatasets(); // Refresh the datasets list
+          // Create a new dataset object
+          const newDataset = {
+            id: Date.now(), // Use a temporary ID
+            name: name,
+            createdAt: new Date().toISOString()
+          };
+          
+          // Update the datasets state locally
+          setDatasets(prevDatasets => [...prevDatasets, newDataset]);
+          
           setModalOpen(false); // Close modal after dataset creation
         } else {
           console.error('Failed to classify dataset');
