@@ -877,13 +877,24 @@ export default async function handler(req, res) {
   //   return res.status(400).json({ message: 'File location is required' });
   // }
     // Add this console log to check if the function is being called
-    console.log('classifyDataset handler called', req.method);
+    // console.log('classifyDataset handler called', req.method);
 
-    if (req.method !== 'POST') {
-      res.setHeader('Allow', ['POST']);
-      return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
-    }
-  
+    // if (req.method !== 'POST') {
+    //   res.setHeader('Allow', ['POST']);
+    //   return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+    // }
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+  }
     const { fileLocation } = req.body;
   
     // Add this console log to check the fileLocation
