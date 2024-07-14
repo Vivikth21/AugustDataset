@@ -867,15 +867,31 @@ const writeToS3 = async (fileName, rows) => {
 };
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
+  // if (req.method !== 'POST') {
+  //   return res.status(405).json({ message: 'Method not allowed' });
+  // }
 
-  const { fileLocation } = req.body;
+  // const { fileLocation } = req.body;
 
-  if (!fileLocation) {
-    return res.status(400).json({ message: 'File location is required' });
-  }
+  // if (!fileLocation) {
+  //   return res.status(400).json({ message: 'File location is required' });
+  // }
+    // Add this console log to check if the function is being called
+    console.log('classifyDataset handler called', req.method);
+
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', ['POST']);
+      return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+    }
+  
+    const { fileLocation } = req.body;
+  
+    // Add this console log to check the fileLocation
+    console.log('fileLocation:', fileLocation);
+  
+    if (!fileLocation) {
+      return res.status(400).json({ message: 'File location is required' });
+    }
 
   const flowFiles = Object.keys(flowFileMap).reduce((acc, key) => {
     const fileName = flowFileMap[key];
@@ -910,7 +926,13 @@ export default async function handler(req, res) {
 
     res.status(200).json({ message: 'File classified and appended successfully' });
   } catch (error) {
-    console.error('Error processing file:', error);
-    res.status(500).json({ message: 'Error processing file', error: error.message });
+    // console.error('Error processing file:', error);
+    // res.status(500).json({ message: 'Error processing file', error: error.message });
+    // console.error('Error processing file:', error);
+    res.status(500).json({ 
+      message: 'Error processing file', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 }
