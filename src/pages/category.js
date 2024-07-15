@@ -1202,6 +1202,15 @@ import { useDarkMode } from '@/contexts/darkModeContext';
 import { EditProvider, useEditContext } from '@/contexts/editContext';
 import FlagIcon from '@mui/icons-material/Flag';
 import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
+import AWS from 'aws-sdk';
+
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION
+});
+
+const s3 = new AWS.S3();
 
 const PAGE_SIZES = [10, 20, 30, 40, 50]; // Options for rows per page
 const DEFAULT_PAGE_SIZE = 30; // Default number of items per page
@@ -1492,40 +1501,91 @@ const StyledTableRow = styled(TableRow)(({ darkMode, edited, flagged }) => ({
   
 }));
 
+// export async function getServerSideProps(context) {
+//   const { query } = context;
+//   const file = query.file || 'dataset.csv';
+//   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
+//   const currentPage = parseInt(query.page, 10) || 1;
+
+//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
+//   const filePath = path.join(dataDirectory, file);
+
+//   const data = [];
+//   const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2','comment']; // Specify columns to use
+
+//   await new Promise((resolve, reject) => {
+//     fs.createReadStream(filePath)
+//       .pipe(csv())
+//       .on('data', (row) => {
+//         // Extract necessary fields and store them
+//         const { message_id_new, user_id, task0, task1, task2 } = row;
+//         const comment = row.comment || '';
+//         data.push({ message_id_new, user_id, task0, task1, task2, comment});
+//       })
+//       .on('end', resolve)
+//       .on('error', reject);
+//   });
+
+//   const totalPages = Math.ceil(data.length / rowsPerPage);
+//   return {
+//     props: {
+//       data,
+//       columns,
+//       currentPage,
+//       totalPages,
+//     },
+//   };
+// }
 export async function getServerSideProps(context) {
   const { query } = context;
   const file = query.file || 'dataset.csv';
   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
   const currentPage = parseInt(query.page, 10) || 1;
 
-  const dataDirectory = path.join(process.cwd(), 'src', 'data2');
-  const filePath = path.join(dataDirectory, file);
+  const bucketName = process.env.S3_BUCKET_NAME;
+  const key = `datasets/${file}`;
 
   const data = [];
-  const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2','comment']; // Specify columns to use
+  const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'comment'];
 
-  await new Promise((resolve, reject) => {
-    fs.createReadStream(filePath)
-      .pipe(csv())
-      .on('data', (row) => {
-        // Extract necessary fields and store them
-        const { message_id_new, user_id, task0, task1, task2 } = row;
-        const comment = row.comment || '';
-        data.push({ message_id_new, user_id, task0, task1, task2, comment});
-      })
-      .on('end', resolve)
-      .on('error', reject);
-  });
+  try {
+    const s3Object = await s3.getObject({ Bucket: bucketName, Key: key }).promise();
+    const csvContent = s3Object.Body.toString('utf-8');
+    
+    await new Promise((resolve, reject) => {
+      csv()
+        .on('data', (row) => {
+          const { message_id_new, user_id, task0, task1, task2 } = row;
+          const comment = row.comment || '';
+          data.push({ message_id_new, user_id, task0, task1, task2, comment });
+        })
+        .on('end', resolve)
+        .on('error', reject)
+        .write(csvContent);
+    });
 
-  const totalPages = Math.ceil(data.length / rowsPerPage);
-  return {
-    props: {
-      data,
-      columns,
-      currentPage,
-      totalPages,
-    },
-  };
+    const totalPages = Math.ceil(data.length / rowsPerPage);
+
+    return {
+      props: {
+        data,
+        columns,
+        currentPage,
+        totalPages,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching data from S3:', error);
+    return {
+      props: {
+        data: [],
+        columns,
+        currentPage: 1,
+        totalPages: 0,
+        error: 'Failed to fetch data from S3'
+      },
+    };
+  }
 }
 
 export default CategoryPage;
