@@ -983,21 +983,47 @@ const sanitizeFields = (row) => {
   }
 };
 
+// const classifyRow = (row, flowFiles) => {
+//   // const { task0, task1, task2 } = row;
+//   const { task0, task1, task2 } = row;
+//   console.log(`Classifying row: task0=${task0}, task1=${task1}, task2=${task2}`);
+
+
+//   if (flowFileMap[task0]) {
+//     flowFiles[flowFileMap[task0]].push(row);
+//   } else if (task0 === 'Other' || task0 === '-') {
+//     flowFiles[flowFileMap['Other_task0']].push(row);
+//   }
+  
+//   if (flowFileMap[task1]) {
+//     flowFiles[flowFileMap[task1]].push(row);
+//   }
+
+//   if (flowFileMap[task2]) {
+//     flowFiles[flowFileMap[task2]].push(row);
+//   } else if (task2 === 'Other') {
+//     flowFiles[flowFileMap['Other_task2']].push(row);
+//   }
+// };
+
 const classifyRow = (row, flowFiles) => {
   const { task0, task1, task2 } = row;
 
+  // Classify for task0
   if (flowFileMap[task0]) {
     flowFiles[flowFileMap[task0]].push(row);
   } else if (task0 === 'Other' || task0 === '-') {
     flowFiles[flowFileMap['Other_task0']].push(row);
   }
   
-  if (flowFileMap[task1]) {
+  // Classify for task1
+  if (task1 === 'Valid' || task1 === 'Invalid') {
     flowFiles[flowFileMap[task1]].push(row);
   }
 
-  if (flowFileMap[task2]) {
-    flowFiles[flowFileMap[task2]].push(row);
+  // Classify for task2
+  if (task2 === 'Blood & Urine') {
+    flowFiles[flowFileMap['Blood & Urine']].push(row);
   } else if (task2 === 'Other') {
     flowFiles[flowFileMap['Other_task2']].push(row);
   }
