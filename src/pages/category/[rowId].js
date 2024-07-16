@@ -1887,7 +1887,7 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
     <iframe 
       src={`/api/getFile?messageId=${rowId}`}
       title="PDF Viewer"
-      style={{ width: '100%', height: '1000px', border: 'none' }} 
+      style={{ maxWidth: '100%', height: '1000px', width: '600px'  }} 
     />
   ) : (
     <img 
