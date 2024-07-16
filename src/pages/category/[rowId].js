@@ -1582,6 +1582,34 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   console.log("Old data: ", oldData);
   console.log("Edited Data", editedData);
 
+  // useEffect(() => {
+  //   if (row) {
+  //     setEditedData((prevData) => ({
+  //       ...prevData,
+  //       // Visited: true, // Set Visited to true
+  //     }));
+  //     setComment(row.comment || '');
+  //   }
+  //   const getFileName = async (rowId) => {
+  //     try {
+  //       const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${rowId}.jpg`);
+  //       if (imageResponse.ok) {
+  //         setFileName(`images/${rowId}.jpg`);
+  //       } else {
+  //         const pdfResponse = await fetch(`/api/checkFileExists?filePath=pdfs/${rowId}.pdf`);
+  //         if (pdfResponse.ok) {
+  //           setFileName(`pdfs/${rowId}.pdf`);
+  //         } else {
+  //           setFileName('');
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error('Error checking file existence:', error);
+  //       setFileName('');
+  //     }
+  //   };
+  //   getFileName(rowId);
+  // }, [row,rowId]);
   useEffect(() => {
     if (row) {
       setEditedData((prevData) => ({
@@ -1590,69 +1618,16 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
       }));
       setComment(row.comment || '');
     }
-    // const getFileName = async (rowId) => {
-    //   try {
-    //     const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${rowId}.jpg`);
-    //     if (imageResponse.ok) {
-    //       setFileName(`images/${rowId}.jpg`);
-    //     } else {
-    //       const pdfResponse = await fetch(`/api/checkFileExists?filePath=pdfs/${rowId}.pdf`);
-    //       if (pdfResponse.ok) {
-    //         setFileName(`pdfs/${rowId}.pdf`);
-    //       } else {
-    //         setFileName('');
-    //       }
-    //     }
-    //   } catch (error) {
-    //     console.error('Error checking file existence:', error);
-    //     setFileName('');
-    //   }
-    // };
-    // const getFileName = async (rowId) => {
-    //   try {
-    //     const s3 = new AWS.S3();
-    //     const imageParams = {
-    //       Bucket: process.env.S3_BUCKET_NAME,
-    //       Key: `images/${rowId}.jpg`
-    //     };
-    //     const pdfParams = {
-    //       Bucket: process.env.S3_BUCKET_NAME,
-    //       Key: `pdfs/${rowId}.pdf`
-    //     };
     
-    //     try {
-    //       await s3.headObject(imageParams).promise();
-    //       setFileName(`images/${rowId}.jpg`);
-    //     } catch (error) {
-    //       if (error.code === 'NotFound') {
-    //         try {
-    //           await s3.headObject(pdfParams).promise();
-    //           setFileName(`pdfs/${rowId}.pdf`);
-    //         } catch (pdfError) {
-    //           if (pdfError.code === 'NotFound') {
-    //             setFileName('');
-    //           } else {
-    //             throw pdfError;
-    //           }
-    //         }
-    //       } else {
-    //         throw error;
-    //       }
-    //     }
-    //   } catch (error) {
-    //     console.error('Error checking file existence:', error);
-    //     setFileName('');
-    //   }
-    // };
-    const getFileName = async (rowId) => {
+    const getFileName = async (messageId) => {
       try {
-        const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${rowId}.jpg`);
+        const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${messageId}.jpg`);
         if (imageResponse.ok) {
-          setFileName(`images/${rowId}.jpg`);
+          setFileName(`images/${messageId}.jpg`);
         } else {
-          const pdfResponse = await fetch(`/api/checkFileExists?filePath=pdfs/${rowId}.pdf`);
+          const pdfResponse = await fetch(`/api/checkFileExists?filePath=pdfs/${messageId}.pdf`);
           if (pdfResponse.ok) {
-            setFileName(`pdfs/${rowId}.pdf`);
+            setFileName(`pdfs/${messageId}.pdf`);
           } else {
             setFileName('');
           }
@@ -1662,8 +1637,11 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
         setFileName('');
       }
     };
-    getFileName(rowId);
-  }, [row,rowId]);
+  
+    if (rowId) {
+      getFileName(rowId);
+    }
+  }, [row, rowId]);
 
   const isPdf = fileName.endsWith('.pdf');
 
@@ -1891,7 +1869,7 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
                 ) : (
                   <img src={`/${fileName}`} alt="Image" style={{ maxWidth: '110%', height: '1000px' }} />
                 )} */}
-                {isPdf ? (
+                {/* {isPdf ? (
   <iframe 
     src={`https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`} 
     alt="pdf" 
@@ -1903,6 +1881,21 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
     alt="Image" 
     style={{ maxWidth: '110%', height: '1000px' }} 
   />
+)} */}
+{fileName && (
+  fileName.endsWith('.pdf') ? (
+    <iframe 
+      src={`/api/getFile?messageId=${rowId}`}
+      title="PDF Viewer"
+      style={{ width: '100%', height: '1000px', border: 'none' }} 
+    />
+  ) : (
+    <img 
+      src={`/api/getFile?messageId=${rowId}`}
+      alt="Image" 
+      style={{ maxWidth: '100%', maxHeight: '1000px', objectFit: 'contain' }} 
+    />
+  )
 )}
               </CardContent>
             </Card>
@@ -2003,39 +1996,7 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
 
 
 
-// export async function getServerSideProps(context) {
-//   const { rowId, file } = context.query;
-//   const filePath = path.join(process.cwd(), 'src', 'data2', file);
-  
-//   try {
-//     const rows = await new Promise((resolve, reject) => {
-//       const results = [];
-//       fs.createReadStream(filePath)
-//         .pipe(csv())
-//         .on('data', (data) => results.push(data))
-//         .on('end', () => {
-//           const rowIndex = results.findIndex((row) => row.message_id_new === rowId);
-//           const row = results[rowIndex] || null;
-//           resolve({ rows: results, row, rowIndex });
-//         })
-//         .on('error', (error) => reject(error));
-//     });
 
-//     return {
-//       props: {
-//         row: rows.row,
-//         rowIndex: rows.rowIndex,
-//         rows: rows.rows,
-//         totalPages: rows.rows.length,
-//       },
-//     };
-//   } catch (error) {
-//     console.error('Error reading CSV file:', error);
-//     return {
-//       notFound: true, // Or handle error appropriately
-//     };
-//   }
-// }
 
 export async function getServerSideProps(context) {
   const { rowId, file } = context.query;
