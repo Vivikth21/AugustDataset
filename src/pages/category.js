@@ -1202,6 +1202,7 @@ import { EditProvider, useEditContext } from '@/contexts/editContext';
 import FlagIcon from '@mui/icons-material/Flag';
 import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import AWS from 'aws-sdk';
+import { parse } from 'csv-parse/sync';
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -1588,69 +1589,157 @@ const StyledTableRow = styled(TableRow)(({ darkMode, edited, flagged }) => ({
 // }
 
 // export default CategoryPage;
+// export async function getServerSideProps(context) {
+//   console.log('Starting getServerSideProps');
+//   const { query } = context;
+//   const file = query.file;
+//   console.log(`File requested: ${file}`);
+
+//   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
+//   const currentPage = parseInt(query.page, 10) || 1;
+
+//   const bucketName = process.env.S3_BUCKET_NAME;
+//   const key = `datasets/${file}`;
+//   console.log(`Bucket: ${bucketName}, Key: ${key}`);
+
+//   const data = [];
+//   const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'comment'];
+
+//   try {
+//     console.log('Attempting to fetch from S3');
+//     const s3Object = await s3.getObject({ Bucket: bucketName, Key: key }).promise();
+//     console.log('S3 object fetched successfully');
+//     const csvContent = s3Object.Body.toString('utf-8');
+//     console.log('CSV content converted to string');
+    
+//     console.log('Starting CSV parsing');
+//     await new Promise((resolve, reject) => {
+//       csv()
+//         .on('data', (row) => {
+//           const { message_id_new, user_id, task0, task1, task2 } = row;
+//           const comment = row.comment || '';
+//           data.push({ message_id_new, user_id, task0, task1, task2, comment });
+//         })
+//         .on('end', () => {
+//           console.log(`CSV parsing complete. Total rows: ${data.length}`);
+//           resolve();
+//         })
+//         .on('error', (error) => {
+//           console.error('Error parsing CSV:', error);
+//           reject(error);
+//         })
+//         .write(csvContent);
+//     });
+
+//     const totalPages = Math.ceil(data.length / rowsPerPage);
+//     console.log(`Total pages: ${totalPages}`);
+
+//     return {
+//       props: {
+//         data,
+//         columns,
+//         currentPage,
+//         totalPages,
+//       },
+//     };
+//   } catch (error) {
+//     console.error('Error in getServerSideProps:', error);
+//     return {
+//       props: {
+//         data: [],
+//         columns,
+//         currentPage: 1,
+//         totalPages: 0,
+//         error: 'Failed to fetch data from S3'
+//       },
+//     };
+//   }
+// }
+
+// export default CategoryPage;
+
 export async function getServerSideProps(context) {
   console.log('Starting getServerSideProps');
+  const startTime = Date.now();
+
   const { query } = context;
   const file = query.file;
   console.log(`File requested: ${file}`);
 
-  const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
-  const currentPage = parseInt(query.page, 10) || 1;
-
   const bucketName = process.env.S3_BUCKET_NAME;
   const key = `datasets/${file}`;
-  console.log(`Bucket: ${bucketName}, Key: ${key}`);
-
-  const data = [];
-  const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'comment'];
 
   try {
-    console.log('Attempting to fetch from S3');
-    const s3Object = await s3.getObject({ Bucket: bucketName, Key: key }).promise();
+    console.log(`Attempting to fetch ${key} from bucket ${bucketName}`);
+    const s3Params = { Bucket: bucketName, Key: key };
+    
+    // First, let's check if the file exists and get its size
+    const headObject = await s3.headObject(s3Params).promise();
+    console.log(`File size: ${headObject.ContentLength} bytes`);
+
+    if (headObject.ContentLength > 1024 * 1024) {
+      throw new Error('File is larger than 1MB, consider implementing pagination');
+    }
+
+    // Fetch the file content
+    const s3Object = await s3.getObject(s3Params).promise();
     console.log('S3 object fetched successfully');
+
     const csvContent = s3Object.Body.toString('utf-8');
     console.log('CSV content converted to string');
-    
-    console.log('Starting CSV parsing');
-    await new Promise((resolve, reject) => {
-      csv()
-        .on('data', (row) => {
-          const { message_id_new, user_id, task0, task1, task2 } = row;
-          const comment = row.comment || '';
-          data.push({ message_id_new, user_id, task0, task1, task2, comment });
-        })
-        .on('end', () => {
-          console.log(`CSV parsing complete. Total rows: ${data.length}`);
-          resolve();
-        })
-        .on('error', (error) => {
-          console.error('Error parsing CSV:', error);
-          reject(error);
-        })
-        .write(csvContent);
-    });
 
-    const totalPages = Math.ceil(data.length / rowsPerPage);
-    console.log(`Total pages: ${totalPages}`);
+    // Parse CSV
+    console.log('Starting CSV parsing');
+    const records = parse(csvContent, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true
+    });
+    console.log(`CSV parsing complete. Total rows: ${records.length}`);
+
+    // Get column names
+    const columns = records.length > 0 ? Object.keys(records[0]) : [];
+
+    const endTime = Date.now();
+    console.log(`Total execution time: ${endTime - startTime}ms`);
 
     return {
       props: {
-        data,
+        data: records,
         columns,
-        currentPage,
-        totalPages,
-      },
+        totalRows: records.length,
+        fileSize: headObject.ContentLength,
+        executionTime: endTime - startTime
+      }
     };
+
   } catch (error) {
     console.error('Error in getServerSideProps:', error);
+    
+    // Construct a detailed error object
+    const errorDetails = {
+      message: error.message,
+      code: error.code,
+      time: new Date().toISOString(),
+      file: file,
+      stack: error.stack
+    };
+
+    // If it's an AWS error, include additional details
+    if (error.statusCode) {
+      errorDetails.statusCode = error.statusCode;
+      errorDetails.requestId = error.requestId;
+    }
+
     return {
       props: {
+        error: JSON.stringify(errorDetails),
         data: [],
-        columns,
-        currentPage: 1,
-        totalPages: 0,
-        error: 'Failed to fetch data from S3'
-      },
+        columns: [],
+        totalRows: 0,
+        fileSize: 0,
+        executionTime: Date.now() - startTime
+      }
     };
   }
 }
