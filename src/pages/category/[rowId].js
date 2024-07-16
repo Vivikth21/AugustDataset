@@ -1568,7 +1568,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useDarkMode } from '@/contexts/darkModeContext';
 import Layout from '@/components/layout';
 import { EditProvider, useEditContext } from '@/contexts/editContext';
-
+import AWS from 'aws-sdk';
 
 const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   const router = useRouter();
@@ -1591,17 +1591,53 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
       }));
       setComment(row.comment || '');
     }
+    // const getFileName = async (rowId) => {
+    //   try {
+    //     const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${rowId}.jpg`);
+    //     if (imageResponse.ok) {
+    //       setFileName(`images/${rowId}.jpg`);
+    //     } else {
+    //       const pdfResponse = await fetch(`/api/checkFileExists?filePath=pdfs/${rowId}.pdf`);
+    //       if (pdfResponse.ok) {
+    //         setFileName(`pdfs/${rowId}.pdf`);
+    //       } else {
+    //         setFileName('');
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error('Error checking file existence:', error);
+    //     setFileName('');
+    //   }
+    // };
     const getFileName = async (rowId) => {
       try {
-        const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${rowId}.jpg`);
-        if (imageResponse.ok) {
+        const s3 = new AWS.S3();
+        const imageParams = {
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: `images/${rowId}.jpg`
+        };
+        const pdfParams = {
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: `pdfs/${rowId}.pdf`
+        };
+    
+        try {
+          await s3.headObject(imageParams).promise();
           setFileName(`images/${rowId}.jpg`);
-        } else {
-          const pdfResponse = await fetch(`/api/checkFileExists?filePath=pdfs/${rowId}.pdf`);
-          if (pdfResponse.ok) {
-            setFileName(`pdfs/${rowId}.pdf`);
+        } catch (error) {
+          if (error.code === 'NotFound') {
+            try {
+              await s3.headObject(pdfParams).promise();
+              setFileName(`pdfs/${rowId}.pdf`);
+            } catch (pdfError) {
+              if (pdfError.code === 'NotFound') {
+                setFileName('');
+              } else {
+                throw pdfError;
+              }
+            }
           } else {
-            setFileName('');
+            throw error;
           }
         }
       } catch (error) {
@@ -1613,31 +1649,6 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
     getFileName(rowId);
   }, [row,rowId]);
 
-  // const getImageFileName = (rowId) => {
-  //   console.log("The Row id in this function is: ",rowId);
-  //   // switch (rowId) {
-  //   //   case '1':
-  //   //     return '1.jpg';
-  //   //   case '2':
-  //   //     return '2.jpg';
-  //   //   case '3':
-  //   //     return '3.jpg';
-  //   //   case '4':
-  //   //     return '4.jpg';
-  //   //   case '5':
-  //   //     return '5.jpg';
-  //   //   default:
-  //   //     return `images/${rowId}.jpg` ;
-  //   // }
-  //   if(`images/${rowId}.jpg`){
-  //     return `images/${rowId}.jpg`;
-  //   }else{
-  //     console.log("ENtered the else condition");
-  //     return `pdfs/${rowId}.pdf`
-  //   }
-  // };
-
-  // const imageFileName = getImageFileName(rowId);
   const isPdf = fileName.endsWith('.pdf');
 
   const handleChange = (field, value) => {
@@ -1851,108 +1862,6 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
       </>
     );
   };
-
-  // return (
-    // <ThemeProvider theme={theme}>
-    //   <Layout pageTitle="Item">
-    //     <CssBaseline />
-    //     <Box sx={{ display: 'flex', minHeight: '80vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
-    //       <Card sx={{ flex: '1 1 30%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-    //         <CardContent>
-    //           {/* <Typography variant="body1" sx={{ marginBottom: '8px', color: darkMode ? '#fff' : '#000' }}>
-    //             <strong>ID:</strong> {row['message_id_new']}
-    //           </Typography> */}
-    //           {(isPdf ? <iframe src = {`/${fileName}`} alt = "pdf" style={{maxWidth: '100%',height:'1000px',width:'600px'}}/> :
-    //           <img src={`/${fileName}`} alt="Image" style={{ maxWidth:'110%',height:'1000px'}} />
-    //           )}
-    //         </CardContent>
-    //       </Card>
-
-    //       <Box sx={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '16px', height: '128vh' }}>
-    //         {renderFormFields()}
-    //         {/* <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', marginBottom: '2px' }}>
-    //           Save
-    //         </Button> */}
-    //         {showCommentField ? (
-    //             <>
-    //               <TextField
-    //                 label="Comment"
-    //                 value={comment}
-    //                 onChange={(e) => setComment(e.target.value)}
-    //                 fullWidth
-    //                 multiline
-    //                 rows={4}
-    //                 margin="normal"
-    //                 variant="outlined"
-    //                 sx={{ marginTop: '1px' }}
-    //                 InputProps={{
-    //                   sx: {
-    //                     fontSize: '14px',
-    //                     minHeight: '100px'
-    //                   },
-    //                 }}
-    //               />
-    //               <Button
-    //                 variant="outlined"
-    //                 color="secondary"
-    //                 onClick={() => {
-    //                   setShowCommentField(false);
-    //                   setComment('');
-    //                 }}
-    //               >
-    //                 Cancel
-    //               </Button>
-    //             </>
-    //           ) : (
-    //             <Button
-    //               variant="outlined"
-    //               color="primary"
-    //               onClick={() => setShowCommentField(true)}
-    //             >
-    //               + Add Comment
-    //             </Button>
-    //           )}
-    //             {/* Save and Reset buttons */}
-    //     <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', gap: '8px' }}>
-    //         <Button
-    //           variant="contained"
-    //           color="primary"
-    //           onClick={handleSave}
-    //         >
-    //           Save
-    //         </Button>
-    //         <Button
-    //           variant="outlined"
-    //           color="secondary"
-    //           onClick={() => setEditedData({ ...oldData })}
-    //         >
-    //           Reset
-    //         </Button>
-    //       </Box>
-
-    //       {/* Back and Previous buttons */}
-    //       <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', gap: '8px' }}>
-    //         {rowIndex > 0 && (
-    //           <Button
-    //             variant="contained"
-    //             color="primary"
-    //             onClick={handlePrevious}
-    //           >
-    //             Previous
-    //           </Button>
-    //         )}
-    //         <Button
-    //           variant="contained"
-    //           color="primary"
-    //           onClick={handleNext}
-    //         >
-    //           Next
-    //         </Button>
-    //       </Box>
-    //     </Box>
-    //     </Box>
-    //   </Layout>
-    // </ThemeProvider>
     return (
       <ThemeProvider theme={theme}>
         <Layout pageTitle="Item">
@@ -1961,11 +1870,24 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
             <Card sx={{ flex: '1 1 30%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
               <CardContent>
                 {/* Display image or PDF */}
-                {isPdf ? (
+                {/* {isPdf ? (
                   <iframe src={`/${fileName}`} alt="pdf" style={{ maxWidth: '100%', height: '1000px', width: '600px' }} />
                 ) : (
                   <img src={`/${fileName}`} alt="Image" style={{ maxWidth: '110%', height: '1000px' }} />
-                )}
+                )} */}
+                {isPdf ? (
+  <iframe 
+    src={`https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`} 
+    alt="pdf" 
+    style={{ maxWidth: '100%', height: '1000px', width: '600px' }} 
+  />
+) : (
+  <img 
+    src={`https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`} 
+    alt="Image" 
+    style={{ maxWidth: '110%', height: '1000px' }} 
+  />
+)}
               </CardContent>
             </Card>
     
@@ -2063,67 +1985,76 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   // );
 };
 
+
+
 // export async function getServerSideProps(context) {
-//   console.log("hello");
 //   const { rowId, file } = context.query;
-//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
-
-//   let rowData = null;
-//   let totalPages = 0;
-//   console.log('file:', file);
-
-//   const filePath = path.join(dataDirectory, file);
-
+//   const filePath = path.join(process.cwd(), 'src', 'data2', file);
+  
 //   try {
 //     const rows = await new Promise((resolve, reject) => {
 //       const results = [];
 //       fs.createReadStream(filePath)
 //         .pipe(csv())
 //         .on('data', (data) => results.push(data))
-//         .on('end', () => resolve(results))
+//         .on('end', () => {
+//           const rowIndex = results.findIndex((row) => row.message_id_new === rowId);
+//           const row = results[rowIndex] || null;
+//           resolve({ rows: results, row, rowIndex });
+//         })
 //         .on('error', (error) => reject(error));
 //     });
 
-//     const rowIndex = rows.findIndex((row) => row.message_id_new === rowId);
-//     console.log("rowIndex:", rowIndex);
-//     console.log("rows:", rows);
-//     console.log("rowIndex:", rowIndex);
-
-//     if (rowIndex !== -1) {
-//       rowData = rows[rowIndex];
-//     }
-//     console.log("rowData", rowData);
-//     totalPages = Math.ceil(rows.length);
+//     return {
+//       props: {
+//         row: rows.row,
+//         rowIndex: rows.rowIndex,
+//         rows: rows.rows,
+//         totalPages: rows.rows.length,
+//       },
+//     };
 //   } catch (error) {
 //     console.error('Error reading CSV file:', error);
+//     return {
+//       notFound: true, // Or handle error appropriately
+//     };
 //   }
-
-//   return {
-//     props: {
-//       row: rowData,
-//       totalPages,
-//       rows,
-//       rowIndex
-//     },
-//   };
 // }
 
 export async function getServerSideProps(context) {
   const { rowId, file } = context.query;
-  const filePath = path.join(process.cwd(), 'src', 'data2', file);
-  
+
+  // Configure AWS SDK
+  AWS.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION
+  });
+
+  const s3 = new AWS.S3();
+
   try {
-    const rows = await new Promise((resolve, reject) => {
+    // Fetch CSV file from S3
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: `datasets/${file}`
+    };
+
+    const s3Object = await s3.getObject(params).promise();
+    const csvContent = s3Object.Body.toString('utf-8');
+
+    // Parse CSV content
+    const rows = await new Promise((resolve) => {
       const results = [];
-      fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (data) => results.push(data))
-        .on('end', () => {
-          const rowIndex = results.findIndex((row) => row.message_id_new === rowId);
-          const row = results[rowIndex] || null;
-          resolve({ rows: results, row, rowIndex });
-        })
-        .on('error', (error) => reject(error));
+      const parser = csv();
+      parser.on('data', (data) => results.push(data));
+      parser.on('end', () => {
+        const rowIndex = results.findIndex((row) => row.message_id_new === rowId);
+        const row = results[rowIndex] || null;
+        resolve({ rows: results, row, rowIndex });
+      });
+      parser.write(csvContent);
+      parser.end();
     });
 
     return {
@@ -2135,13 +2066,12 @@ export async function getServerSideProps(context) {
       },
     };
   } catch (error) {
-    console.error('Error reading CSV file:', error);
+    console.error('Error reading CSV file from S3:', error);
     return {
-      notFound: true, // Or handle error appropriately
+      notFound: true,
     };
   }
 }
-
 
 const RowDetailsPage = (props) => (
   <EditProvider>
