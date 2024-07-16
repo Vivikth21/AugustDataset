@@ -1022,7 +1022,7 @@ const writeToS3 = async (fileName, rows) => {
 
   const params = {
     Bucket: process.env.S3_BUCKET_NAME,
-    Key: `data2/${fileName}`,
+    Key: `datasets/${fileName}`,
     Body: content,
     ContentType: 'text/csv',
   };

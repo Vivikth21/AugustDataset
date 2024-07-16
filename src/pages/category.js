@@ -1537,7 +1537,7 @@ const StyledTableRow = styled(TableRow)(({ darkMode, edited, flagged }) => ({
 // }
 export async function getServerSideProps(context) {
   const { query } = context;
-  const file = query.file || 'dataset.csv';
+  const file = query.file;
   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
   const currentPage = parseInt(query.page, 10) || 1;
 
