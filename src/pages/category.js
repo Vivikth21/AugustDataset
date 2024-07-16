@@ -1658,6 +1658,93 @@ const StyledTableRow = styled(TableRow)(({ darkMode, edited, flagged }) => ({
 
 // export default CategoryPage;
 
+// export async function getServerSideProps(context) {
+//   console.log('Starting getServerSideProps');
+//   const startTime = Date.now();
+
+//   const { query } = context;
+//   const file = query.file;
+//   console.log(`File requested: ${file}`);
+
+//   const bucketName = process.env.S3_BUCKET_NAME;
+//   const key = `datasets/${file}`;
+
+//   try {
+//     console.log(`Attempting to fetch ${key} from bucket ${bucketName}`);
+//     const s3Params = { Bucket: bucketName, Key: key };
+    
+//     // First, let's check if the file exists and get its size
+//     const headObject = await s3.headObject(s3Params).promise();
+//     console.log(`File size: ${headObject.ContentLength} bytes`);
+
+//     if (headObject.ContentLength > 1024 * 1024) {
+//       throw new Error('File is larger than 1MB, consider implementing pagination');
+//     }
+
+//     // Fetch the file content
+//     const s3Object = await s3.getObject(s3Params).promise();
+//     console.log('S3 object fetched successfully');
+
+//     const csvContent = s3Object.Body.toString('utf-8');
+//     console.log('CSV content converted to string');
+
+//     // Parse CSV
+//     console.log('Starting CSV parsing');
+//     const records = parse(csvContent, {
+//       columns: true,
+//       skip_empty_lines: true,
+//       trim: true
+//     });
+//     console.log(`CSV parsing complete. Total rows: ${records.length}`);
+
+//     // Get column names
+//     const columns = records.length > 0 ? Object.keys(records[0]) : [];
+
+//     const endTime = Date.now();
+//     console.log(`Total execution time: ${endTime - startTime}ms`);
+
+//     return {
+//       props: {
+//         data: records,
+//         columns,
+//         totalRows: records.length,
+//         fileSize: headObject.ContentLength,
+//         executionTime: endTime - startTime
+//       }
+//     };
+
+//   } catch (error) {
+//     console.error('Error in getServerSideProps:', error);
+    
+//     // Construct a detailed error object
+//     const errorDetails = {
+//       message: error.message,
+//       code: error.code,
+//       time: new Date().toISOString(),
+//       file: file,
+//       stack: error.stack
+//     };
+
+//     // If it's an AWS error, include additional details
+//     if (error.statusCode) {
+//       errorDetails.statusCode = error.statusCode;
+//       errorDetails.requestId = error.requestId;
+//     }
+
+//     return {
+//       props: {
+//         error: JSON.stringify(errorDetails),
+//         data: [],
+//         columns: [],
+//         totalRows: 0,
+//         fileSize: 0,
+//         executionTime: Date.now() - startTime
+//       }
+//     };
+//   }
+// }
+
+
 export async function getServerSideProps(context) {
   console.log('Starting getServerSideProps');
   const startTime = Date.now();
@@ -1666,8 +1753,14 @@ export async function getServerSideProps(context) {
   const file = query.file;
   console.log(`File requested: ${file}`);
 
+  const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
+  const currentPage = parseInt(query.page, 10) || 1;
+
   const bucketName = process.env.S3_BUCKET_NAME;
   const key = `datasets/${file}`;
+
+  // Define the specific columns we want to render
+  const desiredColumns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'comment'];
 
   try {
     console.log(`Attempting to fetch ${key} from bucket ${bucketName}`);
@@ -1697,17 +1790,27 @@ export async function getServerSideProps(context) {
     });
     console.log(`CSV parsing complete. Total rows: ${records.length}`);
 
-    // Get column names
-    const columns = records.length > 0 ? Object.keys(records[0]) : [];
+    // Filter and transform the data to include only desired columns
+    const filteredData = records.map(row => {
+      const filteredRow = {};
+      desiredColumns.forEach(column => {
+        filteredRow[column] = row[column] || '';
+      });
+      return filteredRow;
+    });
+
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
     const endTime = Date.now();
     console.log(`Total execution time: ${endTime - startTime}ms`);
 
     return {
       props: {
-        data: records,
-        columns,
-        totalRows: records.length,
+        data: filteredData,
+        columns: desiredColumns,
+        currentPage,
+        totalPages,
+        totalRows: filteredData.length,
         fileSize: headObject.ContentLength,
         executionTime: endTime - startTime
       }
@@ -1735,7 +1838,9 @@ export async function getServerSideProps(context) {
       props: {
         error: JSON.stringify(errorDetails),
         data: [],
-        columns: [],
+        columns: desiredColumns,
+        currentPage: 1,
+        totalPages: 0,
         totalRows: 0,
         fileSize: 0,
         executionTime: Date.now() - startTime
