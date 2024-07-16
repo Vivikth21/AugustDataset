@@ -1189,7 +1189,7 @@
 
 // export default CategoryPage;
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect,useMemo } from 'react';
 import Link from 'next/link';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Paper, Select, MenuItem, TextField,IconButton ,FormControl ,InputLabel} from '@mui/material';
 import { styled } from '@mui/system';
@@ -1279,7 +1279,7 @@ const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: ini
       prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]
     );
   };
-  
+
   const navigateToPage = (page) => {
     router.push(`/category?file=${file}&page=${page}&rowsPerPage=${rowsPerPage}`);
     setCurrentPage(page);
