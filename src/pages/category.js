@@ -1342,25 +1342,51 @@ const filteredData = useMemo(() => {
   );
 }, [data, searchTerm, filterOption, localEditedRows, flaggedRows]);
 
+  // const downloadCSV = async () => {
+  //   const res = await fetch(`/api/download?file=${file}`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify({ filterOption, flaggedRows, localEditedRows, searchTerm }),
+  //   });
+  //   const blob = await res.blob();
+  //   const url = window.URL.createObjectURL(blob);
+  //   const a = document.createElement('a');
+  //   a.style.display = 'none';
+  //   a.href = url;
+  //   a.download = file;
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   window.URL.revokeObjectURL(url);
+  // };
   const downloadCSV = async () => {
     const res = await fetch(`/api/download?file=${file}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ filterOption, flaggedRows, localEditedRows, searchTerm }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        filterOption, 
+        flaggedRows, 
+        localEditedRows, 
+        searchTerm 
+      }),
     });
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = file;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
+  
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = file;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } else {
+      console.error('Failed to download CSV');
+      // You might want to show an error message to the user here
+    }
   };
-
   return (
     <Layout pageTitle="Data">
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: darkMode ? '#121212' : '#f4f6f8' }}>
