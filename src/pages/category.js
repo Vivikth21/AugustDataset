@@ -1535,22 +1535,83 @@ const StyledTableRow = styled(TableRow)(({ darkMode, edited, flagged }) => ({
 //     },
 //   };
 // }
+// export async function getServerSideProps(context) {
+//   const { query } = context;
+//   const file = query.file;
+//   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
+//   const currentPage = parseInt(query.page, 10) || 1;
+
+//   const bucketName = process.env.S3_BUCKET_NAME;
+//   const key = `datasets/${file}`;
+
+//   const data = [];
+//   const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'comment'];
+
+//   try {
+//     const s3Object = await s3.getObject({ Bucket: bucketName, Key: key }).promise();
+//     const csvContent = s3Object.Body.toString('utf-8');
+    
+//     await new Promise((resolve, reject) => {
+//       csv()
+//         .on('data', (row) => {
+//           const { message_id_new, user_id, task0, task1, task2 } = row;
+//           const comment = row.comment || '';
+//           data.push({ message_id_new, user_id, task0, task1, task2, comment });
+//         })
+//         .on('end', resolve)
+//         .on('error', reject)
+//         .write(csvContent);
+//     });
+
+//     const totalPages = Math.ceil(data.length / rowsPerPage);
+
+//     return {
+//       props: {
+//         data,
+//         columns,
+//         currentPage,
+//         totalPages,
+//       },
+//     };
+//   } catch (error) {
+//     console.error('Error fetching data from S3:', error);
+//     return {
+//       props: {
+//         data: [],
+//         columns,
+//         currentPage: 1,
+//         totalPages: 0,
+//         error: 'Failed to fetch data from S3'
+//       },
+//     };
+//   }
+// }
+
+// export default CategoryPage;
 export async function getServerSideProps(context) {
+  console.log('Starting getServerSideProps');
   const { query } = context;
   const file = query.file;
+  console.log(`File requested: ${file}`);
+
   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
   const currentPage = parseInt(query.page, 10) || 1;
 
   const bucketName = process.env.S3_BUCKET_NAME;
   const key = `datasets/${file}`;
+  console.log(`Bucket: ${bucketName}, Key: ${key}`);
 
   const data = [];
   const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'comment'];
 
   try {
+    console.log('Attempting to fetch from S3');
     const s3Object = await s3.getObject({ Bucket: bucketName, Key: key }).promise();
+    console.log('S3 object fetched successfully');
     const csvContent = s3Object.Body.toString('utf-8');
+    console.log('CSV content converted to string');
     
+    console.log('Starting CSV parsing');
     await new Promise((resolve, reject) => {
       csv()
         .on('data', (row) => {
@@ -1558,12 +1619,19 @@ export async function getServerSideProps(context) {
           const comment = row.comment || '';
           data.push({ message_id_new, user_id, task0, task1, task2, comment });
         })
-        .on('end', resolve)
-        .on('error', reject)
+        .on('end', () => {
+          console.log(`CSV parsing complete. Total rows: ${data.length}`);
+          resolve();
+        })
+        .on('error', (error) => {
+          console.error('Error parsing CSV:', error);
+          reject(error);
+        })
         .write(csvContent);
     });
 
     const totalPages = Math.ceil(data.length / rowsPerPage);
+    console.log(`Total pages: ${totalPages}`);
 
     return {
       props: {
@@ -1574,7 +1642,7 @@ export async function getServerSideProps(context) {
       },
     };
   } catch (error) {
-    console.error('Error fetching data from S3:', error);
+    console.error('Error in getServerSideProps:', error);
     return {
       props: {
         data: [],
@@ -1586,5 +1654,3 @@ export async function getServerSideProps(context) {
     };
   }
 }
-
-export default CategoryPage;
