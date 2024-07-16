@@ -1264,17 +1264,22 @@ const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: ini
     };
   }, [router.events]);
 
+  // const toggleFlag = (messageId) => {
+  //   setFlaggedRows((prev) => {
+  //     if (prev.includes(messageId)) {
+  //       return prev.filter(id => id !== messageId);
+  //     } else {
+  //       return [...prev, messageId];
+  //     }
+  //   });
+  //   console.log("The flagged and edited rows are ",flaggedRows,editedRows);
+  // };
   const toggleFlag = (messageId) => {
-    setFlaggedRows((prev) => {
-      if (prev.includes(messageId)) {
-        return prev.filter(id => id !== messageId);
-      } else {
-        return [...prev, messageId];
-      }
-    });
-    console.log("The flagged and edited rows are ",flaggedRows,editedRows);
+    setFlaggedRows((prev) => 
+      prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]
+    );
   };
-
+  
   const navigateToPage = (page) => {
     router.push(`/category?file=${file}&page=${page}&rowsPerPage=${rowsPerPage}`);
     setCurrentPage(page);
@@ -1322,11 +1327,21 @@ const CategoryPage = ({ data, columns, currentPage: initialPage, totalPages: ini
     );
   };
 
-  const filteredData = data.filter((row) =>
-  row['message_id_new'].toLowerCase().includes(searchTerm.toLowerCase()) &&
-  (filterOption === '' || (filterOption === 'edited' && localEditedRows.includes(row.message_id_new)) ||
-    (filterOption === 'flagged' && flaggedRows.includes(row.message_id_new)))
-);
+//   const filteredData = data.filter((row) =>
+//   row['message_id_new'].toLowerCase().includes(searchTerm.toLowerCase()) &&
+//   (filterOption === '' || (filterOption === 'edited' && localEditedRows.includes(row.message_id_new)) ||
+//     (filterOption === 'flagged' && flaggedRows.includes(row.message_id_new)))
+// );
+
+const filteredData = useMemo(() => {
+  return data.filter((row) =>
+    row['message_id_new'].toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (filterOption === '' || 
+     (filterOption === 'edited' && localEditedRows.includes(row.message_id_new)) ||
+     (filterOption === 'flagged' && flaggedRows.includes(row.message_id_new)))
+  );
+}, [data, searchTerm, filterOption, localEditedRows, flaggedRows]);
+
   const downloadCSV = async () => {
     const res = await fetch(`/api/download?file=${file}`, {
       method: 'POST',
@@ -1500,249 +1515,6 @@ const StyledTableRow = styled(TableRow)(({ darkMode, edited, flagged }) => ({
   }),
   
 }));
-
-// export async function getServerSideProps(context) {
-//   const { query } = context;
-//   const file = query.file || 'dataset.csv';
-//   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
-//   const currentPage = parseInt(query.page, 10) || 1;
-
-//   const dataDirectory = path.join(process.cwd(), 'src', 'data2');
-//   const filePath = path.join(dataDirectory, file);
-
-//   const data = [];
-//   const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2','comment']; // Specify columns to use
-
-//   await new Promise((resolve, reject) => {
-//     fs.createReadStream(filePath)
-//       .pipe(csv())
-//       .on('data', (row) => {
-//         // Extract necessary fields and store them
-//         const { message_id_new, user_id, task0, task1, task2 } = row;
-//         const comment = row.comment || '';
-//         data.push({ message_id_new, user_id, task0, task1, task2, comment});
-//       })
-//       .on('end', resolve)
-//       .on('error', reject);
-//   });
-
-//   const totalPages = Math.ceil(data.length / rowsPerPage);
-//   return {
-//     props: {
-//       data,
-//       columns,
-//       currentPage,
-//       totalPages,
-//     },
-//   };
-// }
-// export async function getServerSideProps(context) {
-//   const { query } = context;
-//   const file = query.file;
-//   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
-//   const currentPage = parseInt(query.page, 10) || 1;
-
-//   const bucketName = process.env.S3_BUCKET_NAME;
-//   const key = `datasets/${file}`;
-
-//   const data = [];
-//   const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'comment'];
-
-//   try {
-//     const s3Object = await s3.getObject({ Bucket: bucketName, Key: key }).promise();
-//     const csvContent = s3Object.Body.toString('utf-8');
-    
-//     await new Promise((resolve, reject) => {
-//       csv()
-//         .on('data', (row) => {
-//           const { message_id_new, user_id, task0, task1, task2 } = row;
-//           const comment = row.comment || '';
-//           data.push({ message_id_new, user_id, task0, task1, task2, comment });
-//         })
-//         .on('end', resolve)
-//         .on('error', reject)
-//         .write(csvContent);
-//     });
-
-//     const totalPages = Math.ceil(data.length / rowsPerPage);
-
-//     return {
-//       props: {
-//         data,
-//         columns,
-//         currentPage,
-//         totalPages,
-//       },
-//     };
-//   } catch (error) {
-//     console.error('Error fetching data from S3:', error);
-//     return {
-//       props: {
-//         data: [],
-//         columns,
-//         currentPage: 1,
-//         totalPages: 0,
-//         error: 'Failed to fetch data from S3'
-//       },
-//     };
-//   }
-// }
-
-// export default CategoryPage;
-// export async function getServerSideProps(context) {
-//   console.log('Starting getServerSideProps');
-//   const { query } = context;
-//   const file = query.file;
-//   console.log(`File requested: ${file}`);
-
-//   const rowsPerPage = parseInt(query.rowsPerPage, 10) || DEFAULT_PAGE_SIZE;
-//   const currentPage = parseInt(query.page, 10) || 1;
-
-//   const bucketName = process.env.S3_BUCKET_NAME;
-//   const key = `datasets/${file}`;
-//   console.log(`Bucket: ${bucketName}, Key: ${key}`);
-
-//   const data = [];
-//   const columns = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'comment'];
-
-//   try {
-//     console.log('Attempting to fetch from S3');
-//     const s3Object = await s3.getObject({ Bucket: bucketName, Key: key }).promise();
-//     console.log('S3 object fetched successfully');
-//     const csvContent = s3Object.Body.toString('utf-8');
-//     console.log('CSV content converted to string');
-    
-//     console.log('Starting CSV parsing');
-//     await new Promise((resolve, reject) => {
-//       csv()
-//         .on('data', (row) => {
-//           const { message_id_new, user_id, task0, task1, task2 } = row;
-//           const comment = row.comment || '';
-//           data.push({ message_id_new, user_id, task0, task1, task2, comment });
-//         })
-//         .on('end', () => {
-//           console.log(`CSV parsing complete. Total rows: ${data.length}`);
-//           resolve();
-//         })
-//         .on('error', (error) => {
-//           console.error('Error parsing CSV:', error);
-//           reject(error);
-//         })
-//         .write(csvContent);
-//     });
-
-//     const totalPages = Math.ceil(data.length / rowsPerPage);
-//     console.log(`Total pages: ${totalPages}`);
-
-//     return {
-//       props: {
-//         data,
-//         columns,
-//         currentPage,
-//         totalPages,
-//       },
-//     };
-//   } catch (error) {
-//     console.error('Error in getServerSideProps:', error);
-//     return {
-//       props: {
-//         data: [],
-//         columns,
-//         currentPage: 1,
-//         totalPages: 0,
-//         error: 'Failed to fetch data from S3'
-//       },
-//     };
-//   }
-// }
-
-// export default CategoryPage;
-
-// export async function getServerSideProps(context) {
-//   console.log('Starting getServerSideProps');
-//   const startTime = Date.now();
-
-//   const { query } = context;
-//   const file = query.file;
-//   console.log(`File requested: ${file}`);
-
-//   const bucketName = process.env.S3_BUCKET_NAME;
-//   const key = `datasets/${file}`;
-
-//   try {
-//     console.log(`Attempting to fetch ${key} from bucket ${bucketName}`);
-//     const s3Params = { Bucket: bucketName, Key: key };
-    
-//     // First, let's check if the file exists and get its size
-//     const headObject = await s3.headObject(s3Params).promise();
-//     console.log(`File size: ${headObject.ContentLength} bytes`);
-
-//     if (headObject.ContentLength > 1024 * 1024) {
-//       throw new Error('File is larger than 1MB, consider implementing pagination');
-//     }
-
-//     // Fetch the file content
-//     const s3Object = await s3.getObject(s3Params).promise();
-//     console.log('S3 object fetched successfully');
-
-//     const csvContent = s3Object.Body.toString('utf-8');
-//     console.log('CSV content converted to string');
-
-//     // Parse CSV
-//     console.log('Starting CSV parsing');
-//     const records = parse(csvContent, {
-//       columns: true,
-//       skip_empty_lines: true,
-//       trim: true
-//     });
-//     console.log(`CSV parsing complete. Total rows: ${records.length}`);
-
-//     // Get column names
-//     const columns = records.length > 0 ? Object.keys(records[0]) : [];
-
-//     const endTime = Date.now();
-//     console.log(`Total execution time: ${endTime - startTime}ms`);
-
-//     return {
-//       props: {
-//         data: records,
-//         columns,
-//         totalRows: records.length,
-//         fileSize: headObject.ContentLength,
-//         executionTime: endTime - startTime
-//       }
-//     };
-
-//   } catch (error) {
-//     console.error('Error in getServerSideProps:', error);
-    
-//     // Construct a detailed error object
-//     const errorDetails = {
-//       message: error.message,
-//       code: error.code,
-//       time: new Date().toISOString(),
-//       file: file,
-//       stack: error.stack
-//     };
-
-//     // If it's an AWS error, include additional details
-//     if (error.statusCode) {
-//       errorDetails.statusCode = error.statusCode;
-//       errorDetails.requestId = error.requestId;
-//     }
-
-//     return {
-//       props: {
-//         error: JSON.stringify(errorDetails),
-//         data: [],
-//         columns: [],
-//         totalRows: 0,
-//         fileSize: 0,
-//         executionTime: Date.now() - startTime
-//       }
-//     };
-//   }
-// }
 
 
 export async function getServerSideProps(context) {
