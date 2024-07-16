@@ -1608,35 +1608,53 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
     //     setFileName('');
     //   }
     // };
+    // const getFileName = async (rowId) => {
+    //   try {
+    //     const s3 = new AWS.S3();
+    //     const imageParams = {
+    //       Bucket: process.env.S3_BUCKET_NAME,
+    //       Key: `images/${rowId}.jpg`
+    //     };
+    //     const pdfParams = {
+    //       Bucket: process.env.S3_BUCKET_NAME,
+    //       Key: `pdfs/${rowId}.pdf`
+    //     };
+    
+    //     try {
+    //       await s3.headObject(imageParams).promise();
+    //       setFileName(`images/${rowId}.jpg`);
+    //     } catch (error) {
+    //       if (error.code === 'NotFound') {
+    //         try {
+    //           await s3.headObject(pdfParams).promise();
+    //           setFileName(`pdfs/${rowId}.pdf`);
+    //         } catch (pdfError) {
+    //           if (pdfError.code === 'NotFound') {
+    //             setFileName('');
+    //           } else {
+    //             throw pdfError;
+    //           }
+    //         }
+    //       } else {
+    //         throw error;
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error('Error checking file existence:', error);
+    //     setFileName('');
+    //   }
+    // };
     const getFileName = async (rowId) => {
       try {
-        const s3 = new AWS.S3();
-        const imageParams = {
-          Bucket: process.env.S3_BUCKET_NAME,
-          Key: `images/${rowId}.jpg`
-        };
-        const pdfParams = {
-          Bucket: process.env.S3_BUCKET_NAME,
-          Key: `pdfs/${rowId}.pdf`
-        };
-    
-        try {
-          await s3.headObject(imageParams).promise();
+        const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${rowId}.jpg`);
+        if (imageResponse.ok) {
           setFileName(`images/${rowId}.jpg`);
-        } catch (error) {
-          if (error.code === 'NotFound') {
-            try {
-              await s3.headObject(pdfParams).promise();
-              setFileName(`pdfs/${rowId}.pdf`);
-            } catch (pdfError) {
-              if (pdfError.code === 'NotFound') {
-                setFileName('');
-              } else {
-                throw pdfError;
-              }
-            }
+        } else {
+          const pdfResponse = await fetch(`/api/checkFileExists?filePath=pdfs/${rowId}.pdf`);
+          if (pdfResponse.ok) {
+            setFileName(`pdfs/${rowId}.pdf`);
           } else {
-            throw error;
+            setFileName('');
           }
         }
       } catch (error) {
@@ -1644,7 +1662,6 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
         setFileName('');
       }
     };
-
     getFileName(rowId);
   }, [row,rowId]);
 
