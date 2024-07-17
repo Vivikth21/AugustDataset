@@ -1663,14 +1663,14 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   const handlePrevious = () => {
     if (rowIndex > 0) {
       const previousRowId = rows[rowIndex - 1].message_id_new;
-      router.push(`/category/${previousRowId}?file=${file}`);
+      router.push(`/category/${previousRowId}?file=${file}`,undefined, {shallow: true});
     }
   };
 
   const handleNext = () => {
     if (rowIndex < rows.length - 1) {
       const nextRowId = rows[rowIndex + 1].message_id_new;
-      router.push(`/category/${nextRowId}?file=${file}`);
+      router.push(`/category/${nextRowId}?file=${file}`,undefined,{shallow: true });
     }
   };
   
