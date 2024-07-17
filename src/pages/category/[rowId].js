@@ -1580,6 +1580,7 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   const [fileName, setFileName] = useState('');
   const [showCommentField, setShowCommentField] = useState(!!(row.comment && row.comment !== '-'));
   const [comment, setComment] = useState(row ? row.comment || '' : '');
+  const [isSaving, setIsSaving] = useState(false);
   console.log("Old data: ", oldData);
   console.log("Edited Data", editedData);
 
@@ -1680,15 +1681,65 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
       return newData;
     };
     
-    const handleSave = async () => {
-      const updateData = handleConditionalFields({
-        ...row,
-        ...editedData,
-        comment: comment || '',
-      });
+  //   const handleSave = async () => {
+  //     const updateData = handleConditionalFields({
+  //       ...row,
+  //       ...editedData,
+  //       comment: comment || '',
+  //     });
 
 
+  //   try {
+  //     const response = await fetch('/api/updateRow', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         rowId: rowId,
+  //         newData: updateData,
+  //         oldData: oldData,
+  //         currentFile: file // Pass the old data for deletion
+  //       }),
+  //     });
+
+  //     if (response.ok) {
+  //       addEditedRow(rowId);
+  //       console.log('Row updated successfully');
+  //       console.log("Rows pushed", editedRows);
+  //       alert('Change made successfully!');
+  //       router.back();
+  //     } else {
+  //       console.error('Failed to update row');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error updating row:', error);
+  //   }
+  // };
+  const handleSave = async () => {
+    setIsSaving(true); // Set loading state to true
+  
+    const updateData = handleConditionalFields({
+      ...row,
+      ...editedData,
+      comment: comment || '',
+    });
+  
     try {
+      // Show a message to the user
+      const savingMessage = document.createElement('div');
+      savingMessage.textContent = 'Change requested. Please wait a moment...';
+      savingMessage.style.position = 'fixed';
+      savingMessage.style.top = '50%';
+      savingMessage.style.left = '50%';
+      savingMessage.style.transform = 'translate(-50%, -50%)';
+      savingMessage.style.padding = '20px';
+      savingMessage.style.backgroundColor = darkMode ? '#424242' : '#f0f0f0';
+      savingMessage.style.color = darkMode ? '#ffffff' : '#000000';
+      savingMessage.style.borderRadius = '8px';
+      savingMessage.style.zIndex = '9999';
+      document.body.appendChild(savingMessage);
+  
       const response = await fetch('/api/updateRow', {
         method: 'POST',
         headers: {
@@ -1698,24 +1749,40 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
           rowId: rowId,
           newData: updateData,
           oldData: oldData,
-          currentFile: file // Pass the old data for deletion
+          currentFile: file
         }),
       });
-
+  
       if (response.ok) {
         addEditedRow(rowId);
         console.log('Row updated successfully');
         console.log("Rows pushed", editedRows);
+        
+        // Remove the saving message
+        document.body.removeChild(savingMessage);
+        
+        // Show success alert
         alert('Change made successfully!');
         router.back();
       } else {
         console.error('Failed to update row');
+        // Remove the saving message
+        document.body.removeChild(savingMessage);
+        
+        // Show error alert
+        alert('Failed to update row. Please try again.');
       }
     } catch (error) {
       console.error('Error updating row:', error);
+      // Remove the saving message
+      document.body.removeChild(savingMessage);
+      
+      // Show error alert
+      alert('An error occurred while updating. Please try again.');
+    } finally {
+      setIsSaving(false); // Set loading state back to false
     }
   };
-
   const theme = createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
@@ -1896,12 +1963,20 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
     
               {/* Save and Reset buttons */}
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', marginTop: '16px', gap: '8px' }}>
-                <Button
+                {/* <Button
                   variant="contained"
                   color="primary"
                   onClick={handleSave}
                 >
                   Save
+                </Button> */}
+                <Button
+                  variant="contained"
+                  color="primary"
+                 onClick={handleSave}
+                  disabled={isSaving}
+                >
+                     {isSaving ? 'Saving...' : 'Save'}
                 </Button>
                 <Button
                   variant="outlined"
