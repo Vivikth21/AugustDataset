@@ -224,7 +224,10 @@ const Datasets = () => {
   const theme = useTheme();
 
   useEffect(() => {
-    fetchDatasets();
+    const intervalId = setInterval(fetchDatasets, 1000);
+
+    // Clean up the interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   const fetchDatasets = async () => {
