@@ -1617,7 +1617,6 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
         // Visited: true, // Set Visited to true
       }));
       setComment(row.comment || '');
-      setOldData({ ...row });
     }
     
     const getFileName = async (messageId) => {
@@ -1664,14 +1663,14 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   const handlePrevious = () => {
     if (rowIndex > 0) {
       const previousRowId = rows[rowIndex - 1].message_id_new;
-      router.push(`/category/${previousRowId}?file=${file}`,undefined, {shallow: true});
+      router.push(`/category/${previousRowId}?file=${file}`);
     }
   };
 
   const handleNext = () => {
     if (rowIndex < rows.length - 1) {
       const nextRowId = rows[rowIndex + 1].message_id_new;
-      router.push(`/category/${nextRowId}?file=${file}`,undefined,{shallow: true });
+      router.push(`/category/${nextRowId}?file=${file}`);
     }
   };
   

@@ -1341,13 +1341,19 @@ const classifyRow = (row, flowFiles) => {
   }
 };
 
+// const formatField = (value) => {
+//   if (value && (value.includes(',') || value.includes('\n'))) {
+//     return `"${value.replace(/"/g, '""')}"`;
+//   }
+//   return value;
+// };
 const formatField = (value) => {
-  if (value && (value.includes(',') || value.includes('\n'))) {
+  if (value && (value.includes(',') || value.includes('\n') || value.includes('"'))) {
+    // Escape double quotes by doubling them
     return `"${value.replace(/"/g, '""')}"`;
   }
   return value;
 };
-
 const writeToS3 = async (fileName, rows) => {
   const csvHeaders = 'message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2\n';
 
