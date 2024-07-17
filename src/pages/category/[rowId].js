@@ -1569,6 +1569,7 @@ import Layout from '@/components/layout';
 import { EditProvider, useEditContext } from '@/contexts/editContext';
 import AWS from 'aws-sdk';
 
+
 const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   const router = useRouter();
   const { rowId, file } = router.query;
@@ -1582,43 +1583,22 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
   console.log("Old data: ", oldData);
   console.log("Edited Data", editedData);
 
-  // useEffect(() => {
-  //   if (row) {
-  //     setEditedData((prevData) => ({
-  //       ...prevData,
-  //       // Visited: true, // Set Visited to true
-  //     }));
-  //     setComment(row.comment || '');
-  //   }
-  //   const getFileName = async (rowId) => {
-  //     try {
-  //       const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${rowId}.jpg`);
-  //       if (imageResponse.ok) {
-  //         setFileName(`images/${rowId}.jpg`);
-  //       } else {
-  //         const pdfResponse = await fetch(`/api/checkFileExists?filePath=pdfs/${rowId}.pdf`);
-  //         if (pdfResponse.ok) {
-  //           setFileName(`pdfs/${rowId}.pdf`);
-  //         } else {
-  //           setFileName('');
-  //         }
-  //       }
-  //     } catch (error) {
-  //       console.error('Error checking file existence:', error);
-  //       setFileName('');
-  //     }
-  //   };
-  //   getFileName(rowId);
-  // }, [row,rowId]);
+
   useEffect(() => {
-    if (row) {
-      setEditedData((prevData) => ({
-        ...prevData,
-        // Visited: true, // Set Visited to true
-      }));
-      setComment(row.comment || '');
-    }
-    
+    // if (row) {
+    //   setEditedData((prevData) => ({
+    //     ...prevData,
+    //     // Visited: true, // Set Visited to true
+    //   }));
+    //   setComment(row.comment || '');
+    // }
+
+      if (row) {
+        setEditedData({ ...row });
+        setOldData({ ...row });
+        setComment(row.comment || '');
+        setShowCommentField(!!(row.comment && row.comment !== '-'));
+      }
     const getFileName = async (messageId) => {
       try {
         const imageResponse = await fetch(`/api/checkFileExists?filePath=images/${messageId}.jpg`);
@@ -1660,33 +1640,36 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
       comment: value,
     }));
   };
+  // const handlePrevious = () => {
+  //   if (rowIndex > 0) {
+  //     const previousRowId = rows[rowIndex - 1].message_id_new;
+  //     router.push(`/category/${previousRowId}?file=${file}`);
+  //   }
+  // };
+
+  // const handleNext = () => {
+  //   if (rowIndex < rows.length - 1) {
+  //     const nextRowId = rows[rowIndex + 1].message_id_new;
+  //     router.push(`/category/${nextRowId}?file=${file}`);
+  //   }
+  // };
   const handlePrevious = () => {
     if (rowIndex > 0) {
       const previousRowId = rows[rowIndex - 1].message_id_new;
-      router.push(`/category/${previousRowId}?file=${file}`);
-    }
-  };
-
-  const handleNext = () => {
-    if (rowIndex < rows.length - 1) {
-      const nextRowId = rows[rowIndex + 1].message_id_new;
-      router.push(`/category/${nextRowId}?file=${file}`);
+      router.push(`/category/${previousRowId}?file=${file}`, undefined, { shallow: false });
     }
   };
   
-  // const handleSave = async () => {
-  //   const updateData = {
-  //     ...row,
-  //     ...editedData,
-  //     comment: comment || '',
-  //   };
+  const handleNext = () => {
+    if (rowIndex < rows.length - 1) {
+      const nextRowId = rows[rowIndex + 1].message_id_new;
+      router.push(`/category/${nextRowId}?file=${file}`, undefined, { shallow: false });
+    }
+  };
 
     const handleConditionalFields = (data) => {
       const newData = { ...data };
     
-      // if (!(newData.task0 === 'Other' || newData.task0 === 'A' || newData.task0 === 'B' || newData.task0 === 'E') || newData.task1 !== 'Valid') {
-      //   newData.task2 = '-';
-      // }
       if(newData.task0==='C' || newData.task1==='D'){
         newData.task1 = '-'
         newData.task2= '-'
@@ -1777,23 +1760,7 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
             <MenuItem value="Other">Other</MenuItem>
           </Select>
         </FormControl>
-{/* 
-        <TextField
-          label="image-classifier"
-          multiline
-          rows={2}
-          value={output0}
-          onChange={(e) => handleChange('output0', e.target.value)}
-          fullWidth
-          margin="normal"
-          variant="outlined"
-          sx={{marginTop:'1px'}}
-          InputProps={{
-            sx: {
-              fontSize: '14px',
-            },
-          }}
-        /> */}
+
         {(task0 === 'Other' || task0==='A' || task0==='B' || task0==='E') && (
         <FormControl fullWidth margin="normal">
           <InputLabel sx={{ fontSize: '14px', fontWeight: 'bold', color: darkMode ? '#fff' : '#000' }}>Task1</InputLabel>
@@ -1863,25 +1830,7 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
           <Box sx={{ display: 'flex', minHeight: '80vh', padding: '24px', backgroundColor: darkMode ? '#303030' : '#f4f6f8' }}>
             <Card sx={{ flex: '1 1 30%', marginRight: '16px', backgroundColor: darkMode ? '#424242' : '#fff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
               <CardContent>
-                {/* Display image or PDF */}
-                {/* {isPdf ? (
-                  <iframe src={`/${fileName}`} alt="pdf" style={{ maxWidth: '100%', height: '1000px', width: '600px' }} />
-                ) : (
-                  <img src={`/${fileName}`} alt="Image" style={{ maxWidth: '110%', height: '1000px' }} />
-                )} */}
-                {/* {isPdf ? (
-  <iframe 
-    src={`https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`} 
-    alt="pdf" 
-    style={{ maxWidth: '100%', height: '1000px', width: '600px' }} 
-  />
-) : (
-  <img 
-    src={`https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`} 
-    alt="Image" 
-    style={{ maxWidth: '110%', height: '1000px' }} 
-  />
-)} */}
+
 {fileName && (
   fileName.endsWith('.pdf') ? (
     <iframe 
@@ -1990,12 +1939,8 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
         </Layout>
       </ThemeProvider>
     );
-    
-  // );
+
 };
-
-
-
 
 
 export async function getServerSideProps(context) {
@@ -2052,7 +1997,7 @@ export async function getServerSideProps(context) {
 
 const RowDetailsPage = (props) => (
   <EditProvider>
-    <RowDetails {...props} />
+    <RowDetails key={props.row.message_id_new} {...props} />
   </EditProvider>
 );
 
