@@ -1052,7 +1052,7 @@ const Layout = ({ children, pageTitle }) => {
       </Head>
       <AppBar position="static" sx={{ backgroundColor: darkMode ? '#000000' : '#1976d2' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Button href='/home'>
+          <Button href='/'>
             <Typography variant="h5" sx={{ color: darkMode ? '#366e50' : '#000000' }}>
               august
             </Typography>
@@ -1061,7 +1061,7 @@ const Layout = ({ children, pageTitle }) => {
             {pageTitle}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <StyledButton onClick={() => router.push('/home')} aria-label="home">
+            <StyledButton onClick={() => router.push('/')} aria-label="home">
               <HomeIcon fontSize="small" />
             </StyledButton>
             <StyledButton onClick={toggleDarkMode} aria-label="toggle dark mode">
