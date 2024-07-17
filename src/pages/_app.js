@@ -5,13 +5,14 @@ import { EditProvider } from "@/contexts/editContext";
 export default function App({ Component, pageProps }) {
   
   return (
-    <EditProvider>
     <DarkModeProvider>
+    <EditProvider>
+    
 
       <Component {...pageProps}/>
 
-    </DarkModeProvider>
     </EditProvider>
+    </DarkModeProvider>
   );
 }
 
