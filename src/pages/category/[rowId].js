@@ -1617,6 +1617,7 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
         // Visited: true, // Set Visited to true
       }));
       setComment(row.comment || '');
+      setOldData({ ...row });
     }
     
     const getFileName = async (messageId) => {
