@@ -1764,7 +1764,8 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
         
         // Show success alert
         alert('Change made successfully!');
-        {handleNext}
+        // router.back();
+        handleNext();
       } else {
         console.error('Failed to update row');
         // Remove the saving message
