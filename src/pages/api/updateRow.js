@@ -1502,199 +1502,6 @@
 //   return data.task2;
 // }
 
-// import AWS from 'aws-sdk';
-// import { parse } from 'csv-parse/sync';
-
-// // Configure AWS SDK
-// AWS.config.update({
-//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-//   region: process.env.AWS_REGION
-// });
-
-// const s3 = new AWS.S3();
-// const BUCKET_NAME = process.env.S3_BUCKET_NAME;
-
-// export default async function handler(req, res) {
-//   if (req.method !== 'POST') {
-//     return res.status(405).json({ message: 'Method Not Allowed' });
-//   }
-
-//   const { rowId, newData, oldData, currentFile } = req.body;
-
-//   try {
-//     const oldCSVFilesToDeleteFrom = determineCSVFilesToUpdate(oldData);
-//     const newCSVFilesToAppendTo = determineCSVFilesToUpdate(newData);
-
-//     // Update old CSV files
-//     for (const oldCSVFile of oldCSVFilesToDeleteFrom) {
-//       await updateS3File(oldCSVFile, (rows) => rows.filter(row => row['message_id_new'] !== rowId));
-//     }
-
-//     // Append/update new CSV files
-//     for (const newCSVFile of newCSVFilesToAppendTo) {
-//       await updateS3File(newCSVFile, (rows) => {
-//         const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
-//         if (rowIndex !== -1) {
-//           if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-//             newData.task1 = getUpdatedTask1(newData);
-//             newData.task2 = getUpdatedTask2(newData);
-//           }
-//           rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
-//         } else {
-//           if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-//             newData.task1 = getUpdatedTask1(newData);
-//             newData.task2 = getUpdatedTask2(newData);
-//           }
-//           rows.push({ ...newData, comment: newData.comment || '-' });
-//         }
-//         return rows;
-//       });
-//     }
-
-//     // Update the current file
-//     await updateS3File(currentFile, (rows) => {
-//       const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
-//       if (rowIndex !== -1) {
-//         if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-//           newData.task1 = getUpdatedTask1(newData);
-//           newData.task2 = getUpdatedTask2(newData);
-//         }
-//         rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
-//       } else {
-//         if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-//           newData.task1 = getUpdatedTask1(newData);
-//           newData.task2 = getUpdatedTask2(newData);
-//         }
-//         rows.push({ ...newData, comment: newData.comment || '-' });
-//       }
-//       return rows;
-//     });
-
-//     res.status(200).json({ message: 'Row updated successfully' });
-//   } catch (error) {
-//     console.error('Error updating row:', error);
-//     res.status(500).json({ message: 'Internal Server Error' });
-//   }
-// }
-
-// async function updateS3File(fileName, updateFunction) {
-//   const params = {
-//     Bucket: BUCKET_NAME,
-//     Key: `datasets/${fileName}`
-//   };
-//   const data = await s3.getObject(params).promise();
-//   const content = data.Body.toString('utf-8');
-//   const rows = parse(content, { columns: true, skip_empty_lines: true });
-
-//   const updatedRows = updateFunction(rows);
-
-//   const csvContent = 'message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,comment\n' +
-//     updatedRows.map(formatCSVLine).join('');
-
-//   await s3.putObject({
-//     Bucket: BUCKET_NAME,
-//     Key: `datasets/${fileName}`,
-//     Body: csvContent,
-//     ContentType: 'text/csv'
-//   }).promise();
-// }
-// function determineCSVFilesToUpdate(data) {
-//   const { task0: category, task1: validity, task2: type } = data;
-//   const csvFilesToUpdate = [];
-
-//   if(category=== 'A'){
-//     csvFilesToUpdate.push('A.csv');
-//     if (validity === 'Valid') {
-//       csvFilesToUpdate.push('valid.csv');
-//       if (type === 'Blood & Urine') {
-//         csvFilesToUpdate.push('bldurine.csv');
-//       } else if (type === 'Other') {
-//         csvFilesToUpdate.push('other(p2).csv');
-//       }
-//     } else if (validity === 'Invalid') {
-//       csvFilesToUpdate.push('invalid.csv');
-//     }
-//   }
-//   else if (category === 'B') {
-//     csvFilesToUpdate.push('B.csv');
-//     if (validity === 'Valid') {
-//       csvFilesToUpdate.push('valid.csv');
-//       if (type === 'Blood & Urine') {
-//         csvFilesToUpdate.push('bldurine.csv');
-//       } else if (type === 'Other') {
-//         csvFilesToUpdate.push('other(p2).csv');
-//       }
-//     } else if (validity === 'Invalid') {
-//       csvFilesToUpdate.push('invalid.csv');
-//     }
-//   } else if (category === 'C') {
-//     csvFilesToUpdate.push('bodypart.csv');
-//   } else if (category === 'D') {
-//     csvFilesToUpdate.push('food.csv');
-//   } else if (category === 'E') {
-//     csvFilesToUpdate.push('E.csv');
-//     if (validity === 'Valid') {
-//       csvFilesToUpdate.push('valid.csv');
-//       if (type === 'Blood & Urine') {
-//         csvFilesToUpdate.push('bldurine.csv');
-//       } else if (type === 'Other') {
-//         csvFilesToUpdate.push('other(p2).csv');
-//       }
-//     } else if (validity === 'Invalid') {
-//       csvFilesToUpdate.push('invalid.csv');
-//     }
-//   }
-//   else if (category === 'Other') {
-//     csvFilesToUpdate.push('other(p0).csv');
-//     if (validity === 'Valid') {
-//       csvFilesToUpdate.push('valid.csv');
-//       if (type === 'Blood & Urine') {
-//         csvFilesToUpdate.push('bldurine.csv');
-//       } else if (type === 'Other') {
-//         csvFilesToUpdate.push('other(p2).csv');
-//       }
-//     } else if (validity === 'Invalid') {
-//       csvFilesToUpdate.push('invalid.csv');
-//     }
-//   }
-
-//   return csvFilesToUpdate;
-// }
-
-// function getUpdatedTask1(data) {
-//   if (data.task0 === 'Body Part' || data.task0 === 'Food') {
-//     return '-';
-//   }
-//   return data.task1;
-// }
-
-// function getUpdatedTask2(data) {
-//   if (data.task0 === 'Body Part' || data.task0 === 'Food') {
-//     return '-';
-//   } else if (data.task0 === 'Other' && data.task1 === 'Invalid') {
-//     return '-';
-//   }
-//   return data.task2;
-// }
-// function escapeField(text) {
-//   if (text && (text.includes(',') || text.includes('\n') || text.includes('"'))) {
-//     return `"${text.replace(/"/g, '""')}"`;
-//   }
-//   return text;
-// }
-
-// function formatCSVLine(row) {
-//   const fields = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'meta_fileURI', 'output0', 'output1', 'output2', 'comment'];
-//   const values = fields.map(field => {
-//     if (field === 'comment') {
-//       return escapeField(row.comment || '-'); // Ensure comment field is properly handled
-//     }
-//     return escapeField(row[field] || ''); // Ensure other fields are properly handled
-//   });
-//   return values.join(',') + '\n';
-// }
-
 import AWS from 'aws-sdk';
 import { parse } from 'csv-parse/sync';
 
@@ -1708,35 +1515,78 @@ AWS.config.update({
 const s3 = new AWS.S3();
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
-// Implement a simple in-memory cache
-const cache = new Map();
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const { rowId, newData, oldData, currentFile } = req.body;
+  const { rowId, newData, oldData, currentFile, sourceFile } = req.body;
 
   try {
     const oldCSVFilesToDeleteFrom = determineCSVFilesToUpdate(oldData);
     const newCSVFilesToAppendTo = determineCSVFilesToUpdate(newData);
 
-    // Combine all unique files that need to be updated
-    const allFilesToUpdate = [...new Set([...oldCSVFilesToDeleteFrom, ...newCSVFilesToAppendTo, currentFile])];
+      // Update the source file
+    await updateS3File(sourceFile, (rows) => {
+    const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
+    if (rowIndex !== -1) {
+      if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+        newData.task1 = getUpdatedTask1(newData);
+        newData.task2 = getUpdatedTask2(newData);
+      }
+      rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
+    }
+    return rows;
+  });
 
-    await updateAllFiles(allFilesToUpdate, (rows) => {
-      return rows.map(row => {
-        if (row['message_id_new'] === rowId) {
-          const updatedData = { ...row, ...newData, comment: newData.comment || '-' };
+
+    // Update old CSV files
+    for (const oldCSVFile of oldCSVFilesToDeleteFrom) {
+      await updateS3File(oldCSVFile, (rows) => rows.filter(row => row['message_id_new'] !== rowId));
+    }
+
+    // Append/update new CSV files
+    for (const newCSVFile of newCSVFilesToAppendTo) {
+      await updateS3File(newCSVFile, (rows) => {
+        const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
+        if (rowIndex !== -1) {
           if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-            updatedData.task1 = getUpdatedTask1(updatedData);
-            updatedData.task2 = getUpdatedTask2(updatedData);
+            newData.task1 = getUpdatedTask1(newData);
+            newData.task2 = getUpdatedTask2(newData);
           }
-          return updatedData;
+          // rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
+          rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile: sourceFile };
+        } else {
+          if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+            newData.task1 = getUpdatedTask1(newData);
+            newData.task2 = getUpdatedTask2(newData);
+          }
+          // rows.push({ ...newData, comment: newData.comment || '-' });
+          rows.push({ ...newData, comment: newData.comment || '-', sourceFile: sourceFile });
         }
-        return row;
+        return rows;
       });
+    }
+
+    // Update the current file
+    await updateS3File(currentFile, (rows) => {
+      const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
+      if (rowIndex !== -1) {
+        if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+          newData.task1 = getUpdatedTask1(newData);
+          newData.task2 = getUpdatedTask2(newData);
+        }
+        // rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
+        rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile: sourceFile };
+      } else {
+        if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+          newData.task1 = getUpdatedTask1(newData);
+          newData.task2 = getUpdatedTask2(newData);
+        }
+        // rows.push({ ...newData, comment: newData.comment || '-' });
+        rows.push({ ...newData, comment: newData.comment || '-', sourceFile: sourceFile });
+      }
+      return rows;
     });
 
     res.status(200).json({ message: 'Row updated successfully' });
@@ -1746,30 +1596,18 @@ export default async function handler(req, res) {
   }
 }
 
-async function updateAllFiles(filesToUpdate, updateFunction) {
-  const updatePromises = filesToUpdate.map(file => updateS3File(file, updateFunction));
-  await Promise.all(updatePromises);
-}
-
 async function updateS3File(fileName, updateFunction) {
   const params = {
     Bucket: BUCKET_NAME,
     Key: `datasets/${fileName}`
   };
-
-  let rows;
-  if (cache.has(fileName)) {
-    rows = cache.get(fileName);
-  } else {
-    const data = await s3.getObject(params).promise();
-    const content = data.Body.toString('utf-8');
-    rows = parse(content, { columns: true, skip_empty_lines: true });
-    cache.set(fileName, rows);
-  }
+  const data = await s3.getObject(params).promise();
+  const content = data.Body.toString('utf-8');
+  const rows = parse(content, { columns: true, skip_empty_lines: true });
 
   const updatedRows = updateFunction(rows);
 
-  const csvContent = 'message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,comment\n' +
+  const csvContent = 'message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,comment,sourceFile\n' +
     updatedRows.map(formatCSVLine).join('');
 
   await s3.putObject({
@@ -1778,17 +1616,26 @@ async function updateS3File(fileName, updateFunction) {
     Body: csvContent,
     ContentType: 'text/csv'
   }).promise();
-
-  // Update cache
-  cache.set(fileName, updatedRows);
 }
-
 function determineCSVFilesToUpdate(data) {
   const { task0: category, task1: validity, task2: type } = data;
   const csvFilesToUpdate = [];
 
-  if (category === 'A' || category === 'B' || category === 'E') {
-    csvFilesToUpdate.push(`${category}.csv`);
+  if(category=== 'A'){
+    csvFilesToUpdate.push('A.csv');
+    if (validity === 'Valid') {
+      csvFilesToUpdate.push('valid.csv');
+      if (type === 'Blood & Urine') {
+        csvFilesToUpdate.push('bldurine.csv');
+      } else if (type === 'Other') {
+        csvFilesToUpdate.push('other(p2).csv');
+      }
+    } else if (validity === 'Invalid') {
+      csvFilesToUpdate.push('invalid.csv');
+    }
+  }
+  else if (category === 'B') {
+    csvFilesToUpdate.push('B.csv');
     if (validity === 'Valid') {
       csvFilesToUpdate.push('valid.csv');
       if (type === 'Blood & Urine') {
@@ -1803,7 +1650,20 @@ function determineCSVFilesToUpdate(data) {
     csvFilesToUpdate.push('bodypart.csv');
   } else if (category === 'D') {
     csvFilesToUpdate.push('food.csv');
-  } else if (category === 'Other') {
+  } else if (category === 'E') {
+    csvFilesToUpdate.push('E.csv');
+    if (validity === 'Valid') {
+      csvFilesToUpdate.push('valid.csv');
+      if (type === 'Blood & Urine') {
+        csvFilesToUpdate.push('bldurine.csv');
+      } else if (type === 'Other') {
+        csvFilesToUpdate.push('other(p2).csv');
+      }
+    } else if (validity === 'Invalid') {
+      csvFilesToUpdate.push('invalid.csv');
+    }
+  }
+  else if (category === 'Other') {
     csvFilesToUpdate.push('other(p0).csv');
     if (validity === 'Valid') {
       csvFilesToUpdate.push('valid.csv');
@@ -1821,21 +1681,20 @@ function determineCSVFilesToUpdate(data) {
 }
 
 function getUpdatedTask1(data) {
-  if (data.task0 === 'C' || data.task0 === 'D') {
+  if (data.task0 === 'Body Part' || data.task0 === 'Food') {
     return '-';
   }
   return data.task1;
 }
 
 function getUpdatedTask2(data) {
-  if (data.task0 === 'C' || data.task0 === 'D') {
+  if (data.task0 === 'Body Part' || data.task0 === 'Food') {
     return '-';
-  } else if ((data.task0 === 'Other' || data.task0 === 'A' || data.task0 === 'B' || data.task0 === 'E') && data.task1 === 'Invalid') {
+  } else if (data.task0 === 'Other' && data.task1 === 'Invalid') {
     return '-';
   }
   return data.task2;
 }
-
 function escapeField(text) {
   if (text && (text.includes(',') || text.includes('\n') || text.includes('"'))) {
     return `"${text.replace(/"/g, '""')}"`;
@@ -1843,13 +1702,26 @@ function escapeField(text) {
   return text;
 }
 
+// function formatCSVLine(row) {
+//   const fields = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'meta_fileURI', 'output0', 'output1', 'output2', 'comment'];
+//   const values = fields.map(field => {
+//     if (field === 'comment') {
+//       return escapeField(row.comment || '-'); // Ensure comment field is properly handled
+//     }
+//     return escapeField(row[field] || ''); // Ensure other fields are properly handled
+//   });
+//   return values.join(',') + '\n';
+// }
 function formatCSVLine(row) {
-  const fields = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'meta_fileURI', 'output0', 'output1', 'output2', 'comment'];
+  const fields = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'meta_fileURI', 'output0', 'output1', 'output2', 'comment', 'sourceFile'];
   const values = fields.map(field => {
     if (field === 'comment') {
-      return escapeField(row.comment || '-'); // Ensure comment field is properly handled
+      return escapeField(row.comment || '-');
     }
-    return escapeField(row[field] || ''); // Ensure other fields are properly handled
+    if (field === 'sourceFile') {
+      return escapeField(row.sourceFile || '');
+    }
+    return escapeField(row[field] || '');
   });
   return values.join(',') + '\n';
 }

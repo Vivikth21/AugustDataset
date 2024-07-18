@@ -1316,9 +1316,9 @@ const sanitizeFields = (row) => {
   }
 };
 
-const classifyRow = (row, flowFiles) => {
+const classifyRow = (row, flowFiles,sourceFile) => {
   const { task0, task1, task2 } = row;
-
+  row.sourceFile = sourceFile;
   // Classify task0
   if (flowFileMap[task0]) {
     flowFiles[flowFileMap[task0]].push(row);
@@ -1357,7 +1357,7 @@ const formatField = (value) => {
 
 
 const writeToS3 = async (fileName, rows) => {
-  const csvHeaders = 'message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2\n';
+  const csvHeaders = 'message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,sourceFile\n';
 
   const formattedRows = rows.map(row => {
     const formattedValues = Object.values(row).map(value => formatField(value));
@@ -1421,13 +1421,13 @@ export default async function handler(req, res) {
 
     let processedRows = 0;
     const totalRows = records.length;
-
+    const sourceFile = fileLocation.split('/').pop();
     // Process data in chunks
     for (let i = 0; i < records.length; i += CHUNK_SIZE) {
       const chunk = records.slice(i, i + CHUNK_SIZE);
       chunk.forEach(row => {
         sanitizeFields(row);
-        classifyRow(row, flowFiles);
+        classifyRow(row, flowFiles,sourceFile);
       });
       processedRows += chunk.length;
       
