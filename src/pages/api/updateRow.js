@@ -1524,6 +1524,8 @@ export default async function handler(req, res) {
   const { rowId, newData, oldData, currentFile, sourceFile } = req.body;
   if (!sourceFile && validFiles.includes(currentFile)) {
     return res.status(400).json({ message: 'Source file is missing' });
+  }else if(!sourceFile){
+    sourceFile = currentFile;
   }
   try {
     console.log('Processing update for rowId:', rowId);
@@ -1551,7 +1553,7 @@ export default async function handler(req, res) {
             newData.task2 = getUpdatedTask2(newData);
           }
           // rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
-          rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile: sourceFile };
+          rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile: sourceFile};
         } else {
           if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
             newData.task1 = getUpdatedTask1(newData);
