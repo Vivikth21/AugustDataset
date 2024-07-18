@@ -1524,8 +1524,6 @@ export default async function handler(req, res) {
   const { rowId, newData, oldData, currentFile, sourceFile } = req.body;
   if (!sourceFile && validFiles.includes(currentFile)) {
     return res.status(400).json({ message: 'Source file is missing' });
-  }else if(!sourceFile){
-    var flag =1;
   }
   try {
     console.log('Processing update for rowId:', rowId);
@@ -1542,31 +1540,60 @@ export default async function handler(req, res) {
       await updateS3File(oldCSVFile, (rows) => rows.filter(row => row['message_id_new'] !== rowId));
     }
 
-    // Append/update new CSV files
-    for (const newCSVFile of newCSVFilesToAppendTo) {
-      console.log('Updating new CSV file:', newCSVFile);
-      await updateS3File(newCSVFile, (rows) => {
-        const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
-        if (rowIndex !== -1) {
-          if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-            newData.task1 = getUpdatedTask1(newData);
-            newData.task2 = getUpdatedTask2(newData);
-          }
-          // rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
-          rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile: flag===1 ? currentFile : sourceFile };
-        } else {
-          if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-            newData.task1 = getUpdatedTask1(newData);
-            newData.task2 = getUpdatedTask2(newData);
-          }
-          // rows.push({ ...newData, comment: newData.comment || '-' });
-          rows.push({ ...newData, comment: newData.comment || '-', sourceFile: sourceFile });
-        }
-        return rows;
+    // // Append/update new CSV files
+    // for (const newCSVFile of newCSVFilesToAppendTo) {
+    //   console.log('Updating new CSV file:', newCSVFile);
+    //   await updateS3File(newCSVFile, (rows) => {
+    //     const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
+    //     if (rowIndex !== -1) {
+    //       if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+    //         newData.task1 = getUpdatedTask1(newData);
+    //         newData.task2 = getUpdatedTask2(newData);
+    //       }
+    //       // rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
+    //       rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile: flag===1 ? currentFile : sourceFile };
+    //     } else {
+    //       if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+    //         newData.task1 = getUpdatedTask1(newData);
+    //         newData.task2 = getUpdatedTask2(newData);
+    //       }
+    //       // rows.push({ ...newData, comment: newData.comment || '-' });
+    //       rows.push({ ...newData, comment: newData.comment || '-', sourceFile: sourceFile });
+    //     }
+    //     return rows;
+    //   });
+    // }
+
+// Append/update new CSV files
+for (const newCSVFile of newCSVFilesToAppendTo) {
+  console.log('Updating new CSV file:', newCSVFile);
+  await updateS3File(newCSVFile, (rows) => {
+    const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
+    if (rowIndex !== -1) {
+      if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+        newData.task1 = getUpdatedTask1(newData);
+        newData.task2 = getUpdatedTask2(newData);
+      }
+      rows[rowIndex] = { 
+        ...rows[rowIndex], 
+        ...newData, 
+        comment: newData.comment || '-', 
+        sourceFile: sourceFile || currentFile 
+      };
+    } else {
+      if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+        newData.task1 = getUpdatedTask1(newData);
+        newData.task2 = getUpdatedTask2(newData);
+      }
+      rows.push({ 
+        ...newData, 
+        comment: newData.comment || '-', 
+        sourceFile: sourceFile || currentFile 
       });
     }
-
-
+    return rows;
+  });
+}
 
     
 if (!validFiles.includes(currentFile)) {
@@ -1613,60 +1640,6 @@ if (!validFiles.includes(currentFile)) {
       res.status(500).json({ message: 'Internal Server Error', error: error.message, stack: error.stack });
     }
   }
-
-
-
-// async function updateS3File(fileName, updateFunction) {
-//   const params = {
-//     Bucket: BUCKET_NAME,
-//     Key: `datasets/${fileName}`
-//   };
-//   const data = await s3.getObject(params).promise();
-//   const content = data.Body.toString('utf-8');
-//   const rows = parse(content, { columns: true, skip_empty_lines: true });
-
-//   const updatedRows = updateFunction(rows);
-
-//   const csvContent = 'message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,comment,sourceFile\n' +
-//     updatedRows.map(formatCSVLine).join('');
-
-//   await s3.putObject({
-//     Bucket: BUCKET_NAME,
-//     Key: `datasets/${fileName}`,
-//     Body: csvContent,
-//     ContentType: 'text/csv'
-//   }).promise();
-// }
-// async function updateS3File(fileName, updateFunction) {
-//   const params = {
-//     Bucket: BUCKET_NAME,
-//     Key: `datasets/${fileName}`
-//   };
-//   try {
-//     console.log(`Fetching file: ${fileName}`);
-//     const data = await s3.getObject(params).promise();
-//     const content = data.Body.toString('utf-8');
-//     const rows = parse(content, { columns: true, skip_empty_lines: true });
-
-//     console.log(`Updating rows for file: ${fileName}`);
-//     const updatedRows = updateFunction(rows);
-
-//     const csvContent = 'message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,comment,sourceFile\n' +
-//       updatedRows.map(formatCSVLine).join('');
-
-//     console.log(`Uploading updated file: ${fileName}`);
-//     await s3.putObject({
-//       Bucket: BUCKET_NAME,
-//       Key: `datasets/${fileName}`,
-//       Body: csvContent,
-//       ContentType: 'text/csv'
-//     }).promise();
-//     console.log(`File updated successfully: ${fileName}`);
-//   } catch (error) {
-//     console.error(`Error updating file ${fileName}:`, error);
-//     throw error;
-//   }
-// }
 
 async function updateS3File(fileName, updateFunction) {
   if (!fileName) {
@@ -1790,16 +1763,6 @@ function escapeField(text) {
   return text;
 }
 
-// function formatCSVLine(row) {
-//   const fields = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'meta_fileURI', 'output0', 'output1', 'output2', 'comment'];
-//   const values = fields.map(field => {
-//     if (field === 'comment') {
-//       return escapeField(row.comment || '-'); // Ensure comment field is properly handled
-//     }
-//     return escapeField(row[field] || ''); // Ensure other fields are properly handled
-//   });
-//   return values.join(',') + '\n';
-// }
 function formatCSVLine(row) {
   const fields = ['message_id_new', 'user_id', 'task0', 'task1', 'task2', 'meta_fileURI', 'output0', 'output1', 'output2', 'comment', 'sourceFile'];
   const values = fields.map(field => {
