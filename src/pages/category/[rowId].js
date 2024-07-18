@@ -1749,7 +1749,8 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
           rowId: rowId,
           newData: updateData,
           oldData: oldData,
-          currentFile: file
+          currentFile: file,
+          sourceFile: updateData.sourceFile, 
         }),
       });
   

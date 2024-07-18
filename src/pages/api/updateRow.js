@@ -1521,8 +1521,12 @@ export default async function handler(req, res) {
   }
 
   const { rowId, newData, oldData, currentFile, sourceFile } = req.body;
-
+  if (!sourceFile) {
+    return res.status(400).json({ message: 'Source file is missing' });
+  }
   try {
+    console.log('Processing update for rowId:', rowId);
+    console.log('Source file:', sourceFile);
     const oldCSVFilesToDeleteFrom = determineCSVFilesToUpdate(oldData);
     const newCSVFilesToAppendTo = determineCSVFilesToUpdate(newData);
 
@@ -1581,27 +1585,48 @@ export default async function handler(req, res) {
       return rows;
     });
  
-          // Update the source file
-          console.log('Updating source file:', sourceFile);
-          await updateS3File(sourceFile, (rows) => {
-            const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
-            if (rowIndex !== -1) {
-              if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-                newData.task1 = getUpdatedTask1(newData);
-                newData.task2 = getUpdatedTask2(newData);
-              }
-              rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
-            }
-            return rows;
-          });
-          console.log('Update completed successfully');
+  //         // Update the source file
+  //         console.log('Updating source file:', sourceFile);
+  //         await updateS3File(sourceFile, (rows) => {
+  //           const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
+  //           if (rowIndex !== -1) {
+  //             if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+  //               newData.task1 = getUpdatedTask1(newData);
+  //               newData.task2 = getUpdatedTask2(newData);
+  //             }
+  //             rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
+  //           }
+  //           return rows;
+  //         });
+  //         console.log('Update completed successfully');
 
-    res.status(200).json({ message: 'Row updated successfully' });
-  } catch (error) {
-    console.error('Error updating row:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+  //   res.status(200).json({ message: 'Row updated successfully' });
+  // } catch (error) {
+  //   console.error('Error updating row:', error);
+  //   res.status(500).json({ message: 'Internal Server Error' });
+  // }
+      // Update the source file
+      console.log('Updating source file:', sourceFile);
+      await updateS3File(sourceFile, (rows) => {
+        const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
+        if (rowIndex !== -1) {
+          if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+            newData.task1 = getUpdatedTask1(newData);
+            newData.task2 = getUpdatedTask2(newData);
+          }
+          rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile };
+        }
+        return rows;
+      });
+  
+      console.log('Update completed successfully');
+      res.status(200).json({ message: 'Row updated successfully' });
+    } catch (error) {
+      console.error('Error updating row:', error);
+      res.status(500).json({ message: 'Internal Server Error', error: error.message, stack: error.stack });
+    }
   }
-}
+
 
 // async function updateS3File(fileName, updateFunction) {
 //   const params = {
@@ -1624,11 +1649,48 @@ export default async function handler(req, res) {
 //     ContentType: 'text/csv'
 //   }).promise();
 // }
+// async function updateS3File(fileName, updateFunction) {
+//   const params = {
+//     Bucket: BUCKET_NAME,
+//     Key: `datasets/${fileName}`
+//   };
+//   try {
+//     console.log(`Fetching file: ${fileName}`);
+//     const data = await s3.getObject(params).promise();
+//     const content = data.Body.toString('utf-8');
+//     const rows = parse(content, { columns: true, skip_empty_lines: true });
+
+//     console.log(`Updating rows for file: ${fileName}`);
+//     const updatedRows = updateFunction(rows);
+
+//     const csvContent = 'message_id_new,user_id,task0,task1,task2,meta_fileURI,output0,output1,output2,comment,sourceFile\n' +
+//       updatedRows.map(formatCSVLine).join('');
+
+//     console.log(`Uploading updated file: ${fileName}`);
+//     await s3.putObject({
+//       Bucket: BUCKET_NAME,
+//       Key: `datasets/${fileName}`,
+//       Body: csvContent,
+//       ContentType: 'text/csv'
+//     }).promise();
+//     console.log(`File updated successfully: ${fileName}`);
+//   } catch (error) {
+//     console.error(`Error updating file ${fileName}:`, error);
+//     throw error;
+//   }
+// }
+
 async function updateS3File(fileName, updateFunction) {
+  if (!fileName) {
+    console.error('File name is undefined');
+    throw new Error('File name is undefined');
+  }
+
   const params = {
     Bucket: BUCKET_NAME,
     Key: `datasets/${fileName}`
   };
+
   try {
     console.log(`Fetching file: ${fileName}`);
     const data = await s3.getObject(params).promise();
@@ -1654,6 +1716,7 @@ async function updateS3File(fileName, updateFunction) {
     throw error;
   }
 }
+
 function determineCSVFilesToUpdate(data) {
   const { task0: category, task1: validity, task2: type } = data;
   const csvFilesToUpdate = [];
