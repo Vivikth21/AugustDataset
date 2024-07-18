@@ -1516,12 +1516,13 @@ const s3 = new AWS.S3();
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
 export default async function handler(req, res) {
+  const validFiles = ['A.csv', 'B.csv', 'bodypart.csv', 'food.csv', 'E.csv', 'other(p0).csv', 'valid.csv', 'invalid.csv', 'bldurine.csv', 'other(p2).csv'];
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
   const { rowId, newData, oldData, currentFile, sourceFile } = req.body;
-  if (!sourceFile) {
+  if (!sourceFile && validFiles.includes(currentFile)) {
     return res.status(400).json({ message: 'Source file is missing' });
   }
   try {
@@ -1562,7 +1563,7 @@ export default async function handler(req, res) {
         return rows;
       });
     }
-    const validFiles = ['A.csv', 'B.csv', 'bodypart.csv', 'food.csv', 'E.csv', 'other(p0).csv', 'valid.csv', 'invalid.csv', 'bldurine.csv', 'other(p2).csv'];
+
 
 
     
