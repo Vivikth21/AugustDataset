@@ -1564,26 +1564,26 @@ export default async function handler(req, res) {
     }
 
     // Update the current file
-    console.log('Updating current file:', currentFile);
-    await updateS3File(currentFile, (rows) => {
-      const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
-      if (rowIndex !== -1) {
-        if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-          newData.task1 = getUpdatedTask1(newData);
-          newData.task2 = getUpdatedTask2(newData);
-        }
-        // rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
-        rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile: sourceFile };
-      } else {
-        if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-          newData.task1 = getUpdatedTask1(newData);
-          newData.task2 = getUpdatedTask2(newData);
-        }
-        // rows.push({ ...newData, comment: newData.comment || '-' });
-        rows.push({ ...newData, comment: newData.comment || '-', sourceFile: sourceFile });
-      }
-      return rows;
-    });
+    // console.log('Updating current file:', currentFile);
+    // await updateS3File(currentFile, (rows) => {
+    //   const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
+    //   if (rowIndex !== -1) {
+    //     if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+    //       newData.task1 = getUpdatedTask1(newData);
+    //       newData.task2 = getUpdatedTask2(newData);
+    //     }
+    //     // rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
+    //     rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile: sourceFile };
+    //   } else {
+    //     if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+    //       newData.task1 = getUpdatedTask1(newData);
+    //       newData.task2 = getUpdatedTask2(newData);
+    //     }
+    //     // rows.push({ ...newData, comment: newData.comment || '-' });
+    //     rows.push({ ...newData, comment: newData.comment || '-', sourceFile: sourceFile });
+    //   }
+    //   return rows;
+    // });
  
   //         // Update the source file
   //         console.log('Updating source file:', sourceFile);
