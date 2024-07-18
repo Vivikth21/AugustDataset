@@ -1765,7 +1765,11 @@ const RowDetails = ({ row, totalPages ,rowIndex,rows}) => {
         // Show success alert
         alert('Change made successfully!');
         // router.back();
-        handleNext();
+        if (rowIndex < rows.length - 1) {
+          const nextRowId = rows[rowIndex + 1].message_id_new;
+          router.push(`/category/${nextRowId}?file=${file}`, undefined, { shallow: false });
+        }
+        
       } else {
         console.error('Failed to update row');
         // Remove the saving message
