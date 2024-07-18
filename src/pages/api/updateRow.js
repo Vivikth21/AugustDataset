@@ -1562,49 +1562,32 @@ export default async function handler(req, res) {
         return rows;
       });
     }
+    const validFiles = ['A.csv', 'B.csv', 'bodypart.csv', 'food.csv', 'E.csv', 'other(p0).csv', 'valid.csv', 'invalid.csv', 'bldurine.csv', 'other(p2).csv'];
 
-    // Update the current file
-    // console.log('Updating current file:', currentFile);
-    // await updateS3File(currentFile, (rows) => {
-    //   const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
-    //   if (rowIndex !== -1) {
-    //     if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-    //       newData.task1 = getUpdatedTask1(newData);
-    //       newData.task2 = getUpdatedTask2(newData);
-    //     }
-    //     // rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
-    //     rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-', sourceFile: sourceFile };
-    //   } else {
-    //     if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-    //       newData.task1 = getUpdatedTask1(newData);
-    //       newData.task2 = getUpdatedTask2(newData);
-    //     }
-    //     // rows.push({ ...newData, comment: newData.comment || '-' });
-    //     rows.push({ ...newData, comment: newData.comment || '-', sourceFile: sourceFile });
-    //   }
-    //   return rows;
-    // });
- 
-  //         // Update the source file
-  //         console.log('Updating source file:', sourceFile);
-  //         await updateS3File(sourceFile, (rows) => {
-  //           const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
-  //           if (rowIndex !== -1) {
-  //             if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
-  //               newData.task1 = getUpdatedTask1(newData);
-  //               newData.task2 = getUpdatedTask2(newData);
-  //             }
-  //             rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
-  //           }
-  //           return rows;
-  //         });
-  //         console.log('Update completed successfully');
 
-  //   res.status(200).json({ message: 'Row updated successfully' });
-  // } catch (error) {
-  //   console.error('Error updating row:', error);
-  //   res.status(500).json({ message: 'Internal Server Error' });
-  // }
+    
+if (!validFiles.includes(currentFile)) {
+      console.log('Updating current file:', currentFile);
+    await updateS3File(currentFile, (rows) => {
+      const rowIndex = rows.findIndex(row => row['message_id_new'] === rowId);
+      if (rowIndex !== -1) {
+        if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+          newData.task1 = getUpdatedTask1(newData);
+          newData.task2 = getUpdatedTask2(newData);
+        }
+        // rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-' };
+        rows[rowIndex] = { ...rows[rowIndex], ...newData, comment: newData.comment || '-'};
+      } else {
+        if (oldData.task0 !== newData.task0 || oldData.task1 !== newData.task1) {
+          newData.task1 = getUpdatedTask1(newData);
+          newData.task2 = getUpdatedTask2(newData);
+        }
+        // rows.push({ ...newData, comment: newData.comment || '-' });
+        rows.push({ ...newData, comment: newData.comment || '-'});
+      }
+      return rows;
+    });
+  }else{
       // Update the source file
       console.log('Updating source file:', sourceFile);
       await updateS3File(sourceFile, (rows) => {
@@ -1618,6 +1601,7 @@ export default async function handler(req, res) {
         }
         return rows;
       });
+    }
   
       console.log('Update completed successfully');
       res.status(200).json({ message: 'Row updated successfully' });
@@ -1626,6 +1610,7 @@ export default async function handler(req, res) {
       res.status(500).json({ message: 'Internal Server Error', error: error.message, stack: error.stack });
     }
   }
+
 
 
 // async function updateS3File(fileName, updateFunction) {
