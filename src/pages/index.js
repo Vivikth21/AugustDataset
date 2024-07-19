@@ -203,6 +203,7 @@ import { motion } from 'framer-motion';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useDarkMode } from '@/contexts/darkModeContext';
+import { useMemo ,useEffect} from 'react';
 
 const getTheme = (darkMode) => {
   let theme = createTheme({
@@ -327,9 +328,12 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const Home = () => {
   const { darkMode, toggleDarkMode } = useDarkMode();
-  const theme = getTheme(darkMode);
+  const theme = React.useMemo(() => getTheme(darkMode), [darkMode]);
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  useEffect(() => {
+    document.body.style.backgroundColor = theme.palette.background.default;
+  }, [theme]);
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
